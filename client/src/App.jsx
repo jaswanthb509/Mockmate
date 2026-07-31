@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
@@ -9,26 +9,34 @@ import Interview from "./pages/interview/Interview";
 import Result from "./pages/interview/Result";
 import History from "./pages/history/History";
 
+import ProtectedRoute from "./routes/ProtectedRoute";
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
+    <Routes>
+      <Route path="/" element={<Home />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
 
-        <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/register" element={<Register />} />
 
-        <Route path="/setup" element={<SetupInterview />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
 
-        <Route path="/interview" element={<Interview />} />
+      <Route path="/setup" element={<SetupInterview />} />
 
-        <Route path="/result" element={<Result />} />
+      <Route path="/interview" element={<Interview />} />
 
-        <Route path="/history" element={<History />} />
-      </Routes>
-    </BrowserRouter>
+      <Route path="/result" element={<Result />} />
+
+      <Route path="/history" element={<History />} />
+    </Routes>
   );
 }
 
