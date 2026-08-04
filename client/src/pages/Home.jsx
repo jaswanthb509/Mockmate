@@ -1,14 +1,18 @@
+import Navbar from "../components/Navbar";
+import Hero from "../components/Hero";
+import Stats from "../components/Stats";
+import WhyMockMate from "../components/WhyMockmate";
+import Features from "../components/Features";
+
 const Home = () => {
   return (
-    <main>
-        <nav>
-            <h2>Mockmate</h2>
-            <div>
-                <a href="#">Login</a>
-                <a href="#">SignUp</a>
-            </div>
-        </nav>
-    </main>
+    <>
+      <Navbar />
+      <Hero />
+      <Stats />
+      <WhyMockMate />
+      <Features />
+    </>
   );
 };
 
