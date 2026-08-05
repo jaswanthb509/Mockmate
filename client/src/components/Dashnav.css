@@ -1,0 +1,59 @@
+.dashboard-navbar {
+    width: 100%;
+    height: 75px;
+
+    background: #111827;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 0 60px;
+
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.dashboard-logo {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+}
+
+.dashboard-logo span {
+    color: #7C3AED;
+}
+
+.dashboard-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+}
+
+.dashboard-links a {
+    text-decoration: none;
+    color: white;
+    transition: 0.3s;
+}
+
+.dashboard-links a:hover {
+    color: #7C3AED;
+}
+
+.logout-btn {
+    padding: 12px 25px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #7C3AED;
+
+    color: white;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #6D28D9;
+}
