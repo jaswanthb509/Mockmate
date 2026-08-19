@@ -4,7 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import Dashboard from "./pages/dashboard/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import SetupInterview from "./pages/interview/SetupInterview";
 import Interview from "./pages/interview/Interview";
 import Result from "./pages/interview/Result";
@@ -13,10 +13,13 @@ import History from "./pages/history/History";
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
 
+const Protected = ({ children }) => (
+  <ProtectedRoute>{children}</ProtectedRoute>
+);
+
 function App() {
   return (
     <Routes>
-
       {/* Public Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -26,48 +29,47 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <Protected>
             <Dashboard />
-          </ProtectedRoute>
+          </Protected>
         }
       />
 
       <Route
         path="/setup"
         element={
-          <ProtectedRoute>
+          <Protected>
             <SetupInterview />
-          </ProtectedRoute>
+          </Protected>
         }
       />
 
       <Route
         path="/interview"
         element={
-          <ProtectedRoute>
+          <Protected>
             <Interview />
-          </ProtectedRoute>
+          </Protected>
         }
       />
 
       <Route
         path="/result"
         element={
-          <ProtectedRoute>
+          <Protected>
             <Result />
-          </ProtectedRoute>
+          </Protected>
         }
       />
 
       <Route
         path="/history"
         element={
-          <ProtectedRoute>
+          <Protected>
             <History />
-          </ProtectedRoute>
+          </Protected>
         }
       />
-
     </Routes>
   );
 }

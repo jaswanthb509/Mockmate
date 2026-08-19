@@ -1,8 +1,8 @@
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
-import Stats from "../components/Stats";
-import WhyMockMate from "../components/WhyMockmate";
-import Features from "../components/Features";
+import Navbar from "../components/landing/Navbar";
+import Hero from "../components/landing/Hero";
+import Stats from "../components/landing/Stats";
+import WhyMockmate from "../components/landing/WhyMockmate";
+import Features from "../components/landing/Features";
 
 const Home = () => {
   return (
@@ -10,7 +10,7 @@ const Home = () => {
       <Navbar />
       <Hero />
       <Stats />
-      <WhyMockMate />
+      <WhyMockmate />
       <Features />
     </>
   );

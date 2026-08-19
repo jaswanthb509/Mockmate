@@ -4,16 +4,22 @@ import generateToken from "../utils/generateToken.js";
 
 export const registerUser = async (req, res) => {
   try {
+    console.log("Register request body:", req.body);
+
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name?.trim() || !email?.trim() || !password) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "Please fill all fields",
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingUser) {
       return res.status(400).json({
@@ -22,20 +28,21 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
     });
+
+    const token = generateToken(user._id);
 
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: {
-        token: generateToken(user._id),
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -48,24 +55,29 @@ export const registerUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 };
 
 export const loginUser = async (req, res) => {
   try {
+    console.log("Login request body:", req.body);
+
     const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
+    if (!email?.trim() || !password) {
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
       });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -86,11 +98,13 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    const token = generateToken(user._id);
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
-        token: generateToken(user._id),
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -103,7 +117,7 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 };

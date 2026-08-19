@@ -1,0 +1,94 @@
+/* =========================================
+   DASHBOARD HEADER
+========================================= */
+
+.dashboard-header {
+  width: 100%;
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 28px;
+
+  box-sizing: border-box;
+}
+
+/* =========================================
+   HEADER TEXT
+========================================= */
+
+.dashboard-header-text h1 {
+  margin: 0;
+
+  font-size: 34px;
+  font-weight: 700;
+
+  line-height: 1.15;
+
+  color: #ffffff;
+}
+
+.dashboard-header-text p {
+  margin: 6px 0 0;
+
+  font-size: 16px;
+  font-weight: 400;
+
+  color: #cbd5e1;
+}
+
+/* =========================================
+   PROFILE
+========================================= */
+
+.dashboard-profile {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(
+    135deg,
+    #7c3aed,
+    #9333ea
+  );
+
+  box-shadow:
+    0 8px 25px rgba(124, 58, 237, 0.25);
+}
+
+.dashboard-profile span {
+  font-size: 20px;
+  font-weight: 700;
+
+  color: #ffffff;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    min-height: 70px;
+  }
+
+  .dashboard-header-text h1 {
+    font-size: 28px;
+  }
+
+  .dashboard-header-text p {
+    font-size: 14px;
+  }
+
+  .dashboard-profile {
+    width: 44px;
+    height: 44px;
+  }
+}

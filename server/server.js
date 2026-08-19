@@ -3,17 +3,25 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import interviewRoutes from "./routes/interviewRoutes.js";
 
 dotenv.config();
-
-connectDB();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log("REQUEST RECEIVED:", req.method, req.url);
+  console.log("BODY:", req.body);
+  next();
+});
+
+connectDB();
+
 app.use("/api/auth", authRoutes);
+app.use("/api/interview", interviewRoutes);
 
 app.get("/", (req, res) => {
   res.json({

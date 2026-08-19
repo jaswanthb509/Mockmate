@@ -9,11 +9,13 @@ import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Public Routes
-router.post("/register", registerUser);
+router.post("/register", (req, res, next) => {
+  console.log("REGISTER ROUTE REACHED");
+  next();
+}, registerUser);
+
 router.post("/login", loginUser);
 
-// Private Routes
 router.get("/me", protect, getCurrentUser);
 
 export default router;

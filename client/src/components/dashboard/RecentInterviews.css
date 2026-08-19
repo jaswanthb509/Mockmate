@@ -1,0 +1,124 @@
+.recent-interviews {
+  margin-top: 26px;
+  padding: 26px;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  border-radius: 18px;
+}
+
+.recent-interviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.recent-interviews-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.recent-interviews-header a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #a78bfa;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.recent-interviews-header a:hover {
+  color: #c4b5fd;
+}
+
+.interview-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.interview-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.interview-company-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.interview-details {
+  min-width: 0;
+}
+
+.interview-details h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.interview-details p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.interview-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.interview-score strong {
+  color: #a78bfa;
+  font-size: 15px;
+}
+
+.interview-score span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.interview-view-button {
+  padding: 8px 13px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  color: #c4b5fd;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.interview-view-button:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+@media (max-width: 650px) {
+  .recent-interviews {
+    padding: 20px;
+  }
+
+  .interview-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .interview-view-button {
+    display: none;
+  }
+}

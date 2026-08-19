@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import API from "../services/api";
 
 const AuthContext = createContext();
@@ -16,6 +21,8 @@ export const AuthProvider = ({ children }) => {
     const { token, user } = response.data.data;
 
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
     setUser(user);
 
     return response.data;
@@ -31,6 +38,8 @@ export const AuthProvider = ({ children }) => {
     const { token, user } = response.data.data;
 
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
     setUser(user);
 
     return response.data;
@@ -38,6 +47,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     setUser(null);
   };
 
@@ -51,9 +62,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await API.get("/auth/me");
+
       setUser(response.data.data);
     } catch (error) {
+      console.error("Authentication check failed:", error);
+
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
       setUser(null);
     } finally {
       setLoading(false);
