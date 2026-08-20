@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+const answerSchema = new mongoose.Schema(
+  {
+    question: {
+      type: String,
+      required: true,
+    },
+    answer: {
+      type: String,
+      default: "",
+    },
+  },
+  { _id: false }
+);
+
 const interviewSchema = new mongoose.Schema(
   {
     user: {
@@ -30,37 +44,31 @@ const interviewSchema = new mongoose.Schema(
 
     techStack: {
       type: String,
-      required: true,
+      default: "",
     },
 
-    numberOfQuestions: {
+    totalQuestions: {
       type: Number,
       required: true,
     },
 
-    questions: [
-      {
-        question: String,
-        answer: {
-          type: String,
-          default: "",
-        },
-      },
-    ],
-
-    score: {
+    answeredQuestions: {
       type: Number,
       default: 0,
     },
 
-    feedback: {
-      type: String,
-      default: "",
+    completionScore: {
+      type: Number,
+      default: 0,
     },
+
+    answers: [answerSchema],
   },
   {
     timestamps: true,
   }
 );
 
-export default mongoose.model("Interview", interviewSchema);
+const Interview = mongoose.model("Interview", interviewSchema);
+
+export default Interview;

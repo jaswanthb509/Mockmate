@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Trophy,
@@ -7,34 +8,92 @@ import {
   Home,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./Result.css";
 
 const Result = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const questions = location.state?.questions || [];
-  const rawAnswers = location.state?.answers || {};
+  const [saving, setSaving] = useState(true);
+  const [saveError, setSaveError] = useState("");
 
-  const answers = Array.isArray(rawAnswers)
-    ? rawAnswers
-    : questions.map((question, index) => ({
-        question,
-        answer: rawAnswers[index] || "",
-      }));
+  // Prevent duplicate API calls in React StrictMode
+  const hasSavedInterview = useRef(false);
 
-  const totalQuestions = questions.length || answers.length;
+  const interviewConfig = location.state?.interviewConfig;
+  const answers = location.state?.answers || [];
+
+  const totalQuestions =
+    Number(location.state?.totalQuestions) || answers.length;
 
   const answeredCount = answers.filter(
-    (item) => item.answer && item.answer.trim().length > 0
+    (item) => item.answer?.trim().length > 0
   ).length;
 
-  const score =
+  const completionScore =
     totalQuestions > 0
       ? Math.round((answeredCount / totalQuestions) * 100)
       : 0;
 
-  if (!location.state || totalQuestions === 0) {
+  useEffect(() => {
+    if (hasSavedInterview.current) {
+      return;
+    }
+
+    if (
+      !interviewConfig ||
+      !Array.isArray(answers) ||
+      answers.length === 0
+    ) {
+      setSaving(false);
+      return;
+    }
+
+    const saveCompletedInterview = async () => {
+      hasSavedInterview.current = true;
+
+      try {
+        setSaving(true);
+        setSaveError("");
+
+        await API.post("/interview/save", {
+          role: interviewConfig.role,
+          experience: interviewConfig.experience,
+          difficulty: interviewConfig.difficulty,
+          interviewType: interviewConfig.interviewType,
+          techStack: interviewConfig.techStack,
+          totalQuestions,
+          answeredQuestions: answeredCount,
+          completionScore,
+          answers,
+        });
+
+        setSaving(false);
+      } catch (error) {
+        console.error("Failed to save interview:", error);
+
+        // Allow retry only if saving failed
+        hasSavedInterview.current = false;
+
+        setSaveError(
+          error.response?.data?.message ||
+            "Failed to save your interview."
+        );
+
+        setSaving(false);
+      }
+    };
+
+    saveCompletedInterview();
+  }, []);
+
+  if (
+    !location.state ||
+    !interviewConfig ||
+    !Array.isArray(answers) ||
+    answers.length === 0
+  ) {
     return (
       <div className="result-page">
         <div className="result-container empty-result">
@@ -66,6 +125,7 @@ const Result = () => {
   return (
     <div className="result-page">
       <div className="result-container">
+
         <div className="result-header">
           <div className="result-icon">
             <Trophy size={40} />
@@ -76,9 +136,9 @@ const Result = () => {
           </p>
 
           <h1>
-            {score === 100
-              ? "Great Job!"
-              : score >= 50
+            {completionScore === 100
+              ? "Excellent Work!"
+              : completionScore >= 50
               ? "Good Effort!"
               : "Keep Practicing!"}
           </h1>
@@ -92,12 +152,22 @@ const Result = () => {
           <p>Your Completion Score</p>
 
           <div className="score-circle">
-            <span>{score}%</span>
+            <span>{completionScore}%</span>
           </div>
 
           <h2>
             {answeredCount} / {totalQuestions} Questions Answered
           </h2>
+
+          <p className="save-status">
+            {saving && "Saving your interview..."}
+
+            {!saving && !saveError &&
+              "✓ Interview saved successfully"}
+
+            {!saving && saveError &&
+              `⚠ ${saveError}`}
+          </p>
         </div>
 
         <div className="answers-review">
@@ -105,7 +175,7 @@ const Result = () => {
 
           {answers.map((item, index) => {
             const isAnswered =
-              item.answer && item.answer.trim().length > 0;
+              item.answer?.trim().length > 0;
 
             return (
               <div
@@ -130,9 +200,7 @@ const Result = () => {
                   )}
                 </div>
 
-                <h3>
-                  {item.question || `Question ${index + 1}`}
-                </h3>
+                <h3>{item.question}</h3>
 
                 <p>
                   {isAnswered
@@ -161,6 +229,7 @@ const Result = () => {
             Try Another Interview
           </button>
         </div>
+
       </div>
     </div>
   );

@@ -5,17 +5,20 @@ import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/Dashboard";
+
 import SetupInterview from "./pages/interview/SetupInterview";
 import Interview from "./pages/interview/Interview";
 import Result from "./pages/interview/Result";
+
 import History from "./pages/history/History";
+import InterviewDetails from "./pages/history/InterviewDetails";
 
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-const Protected = ({ children }) => (
-  <ProtectedRoute>{children}</ProtectedRoute>
-);
+const Protected = ({ children }) => {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
 
 function App() {
   return (
@@ -67,6 +70,15 @@ function App() {
         element={
           <Protected>
             <History />
+          </Protected>
+        }
+      />
+
+      <Route
+        path="/history/:id"
+        element={
+          <Protected>
+            <InterviewDetails />
           </Protected>
         }
       />

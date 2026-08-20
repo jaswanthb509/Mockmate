@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 
+import API from "../../services/api";
 import "./SetupInterview.css";
 
 const SetupInterview = () => {
@@ -9,6 +14,7 @@ const SetupInterview = () => {
 
   const [formData, setFormData] = useState({
     role: "",
+    company: "",
     experience: "Fresher",
     difficulty: "Medium",
     interviewType: "Technical",
@@ -16,18 +22,22 @@ const SetupInterview = () => {
     techStack: "",
   });
 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "numberOfQuestions" ? Number(value) : value,
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]:
+        name === "numberOfQuestions"
+          ? Number(value)
+          : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -37,172 +47,206 @@ const SetupInterview = () => {
       return;
     }
 
-    if (
-      formData.interviewType !== "HR" &&
-      !formData.techStack.trim()
-    ) {
-      setError("Please enter the technology stack.");
-      return;
-    }
+    try {
+      setLoading(true);
 
-    navigate("/interview", {
-      state: {
-        interviewConfig: {
-          ...formData,
-          role: formData.role.trim(),
-          techStack: formData.techStack.trim(),
+      const response = await API.post(
+        "/interview/generate-questions",
+        formData
+      );
+
+      const generatedQuestions =
+        response.data?.data?.questions;
+
+      if (
+        !Array.isArray(generatedQuestions) ||
+        generatedQuestions.length === 0
+      ) {
+        throw new Error("No questions were generated.");
+      }
+
+      navigate("/interview", {
+        state: {
+          interviewConfig: formData,
+          questions: generatedQuestions,
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error(
+        "Failed to generate interview questions:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to generate your interview right now. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="setup-page">
-      <div className="setup-container">
+      <div className="setup-card">
+
         <button
           type="button"
-          className="back-button"
+          className="back-dashboard-button"
           onClick={() => navigate("/dashboard")}
+          disabled={loading}
         >
           <ArrowLeft size={18} />
           Back to Dashboard
         </button>
 
-        <div className="setup-card">
-          <div className="setup-heading">
-            <div className="setup-icon">
-              <Sparkles size={26} />
+        <div className="setup-header">
+          <div className="setup-icon">
+            <Sparkles size={28} />
+          </div>
+
+          <div>
+            <h1>Setup Your Interview</h1>
+
+            <p>
+              Configure your preferences and let AI generate
+              personalized interview questions.
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="setup-error">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="setup-grid">
+            <div className="form-group">
+              <label>Target Company (Optional)</label>
+
+              <input
+                type="text"
+                name="company"
+                placeholder="Google, Microsoft, Amazon"
+                value={formData.company}
+                onChange={handleChange}
+                disabled={loading}
+              />
             </div>
 
-            <div>
-              <h1>Setup Your Interview</h1>
+            <div className="form-group">
+              <label>Job Role *</label>
 
-              <p>
-                Customize your interview and let MockMate prepare your
-                personalized practice session.
-              </p>
+              <input
+                type="text"
+                name="role"
+                placeholder="Frontend Developer"
+                value={formData.role}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Experience</label>
+
+              <select
+                name="experience"
+                value={formData.experience}
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value="Fresher">Fresher</option>
+                <option value="1 Year">1 Year</option>
+                <option value="2 Years">2 Years</option>
+                <option value="3+ Years">3+ Years</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Difficulty</label>
+
+              <select
+                name="difficulty"
+                value={formData.difficulty}
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Interview Type</label>
+
+              <select
+                name="interviewType"
+                value={formData.interviewType}
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value="Technical">Technical</option>
+                <option value="HR">HR</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Technology Stack</label>
+
+              <input
+                type="text"
+                name="techStack"
+                placeholder="React, Node.js, MongoDB"
+                value={formData.techStack}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Number of Questions</label>
+
+              <select
+                name="numberOfQuestions"
+                value={formData.numberOfQuestions}
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value={5}>5 Questions</option>
+                <option value={10}>10 Questions</option>
+                <option value={15}>15 Questions</option>
+              </select>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="setup-form">
-            {error && (
-              <div className="setup-error">
-                {error}
-              </div>
+          <button
+            type="submit"
+            className="generate-button"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2
+                  size={19}
+                  className="button-spinner"
+                />
+                Generating Questions...
+              </>
+            ) : (
+              <>
+                <Sparkles size={19} />
+                Generate AI Interview
+              </>
             )}
+          </button>
+        </form>
 
-            <div className="form-group full-width">
-              <label htmlFor="role">Job Role</label>
-
-              <input
-                id="role"
-                type="text"
-                name="role"
-                placeholder="e.g. Frontend Developer"
-                value={formData.role}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="experience">
-                  Experience Level
-                </label>
-
-                <select
-                  id="experience"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleChange}
-                >
-                  <option>Fresher</option>
-                  <option>1 Year</option>
-                  <option>2 Years</option>
-                  <option>3+ Years</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="difficulty">
-                  Difficulty Level
-                </label>
-
-                <select
-                  id="difficulty"
-                  name="difficulty"
-                  value={formData.difficulty}
-                  onChange={handleChange}
-                >
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="interviewType">
-                  Interview Type
-                </label>
-
-                <select
-                  id="interviewType"
-                  name="interviewType"
-                  value={formData.interviewType}
-                  onChange={handleChange}
-                >
-                  <option>Technical</option>
-                  <option>HR</option>
-                  <option>Mixed</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="numberOfQuestions">
-                  Number of Questions
-                </label>
-
-                <select
-                  id="numberOfQuestions"
-                  name="numberOfQuestions"
-                  value={formData.numberOfQuestions}
-                  onChange={handleChange}
-                >
-                  <option value={5}>5 Questions</option>
-                  <option value={10}>10 Questions</option>
-                  <option value={15}>15 Questions</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="techStack">
-                Technology Stack
-              </label>
-
-              <input
-                id="techStack"
-                type="text"
-                name="techStack"
-                placeholder="e.g. React, JavaScript, Node.js, MongoDB"
-                value={formData.techStack}
-                onChange={handleChange}
-              />
-
-              <span className="field-hint">
-                Separate technologies with commas. Optional for HR interviews.
-              </span>
-            </div>
-
-            <button
-              type="submit"
-              className="generate-button"
-            >
-              <Sparkles size={19} />
-              Generate Interview
-            </button>
-          </form>
-        </div>
       </div>
     </div>
   );

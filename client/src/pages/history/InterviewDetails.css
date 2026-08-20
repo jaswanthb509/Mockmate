@@ -1,0 +1,262 @@
+.details-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #111827;
+  color: #f8fafc;
+}
+
+.details-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.details-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 30px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.details-back-btn:hover {
+  border-color: #7c3aed;
+  color: #c4b5fd;
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  margin-bottom: 25px;
+}
+
+.details-label {
+  margin: 0 0 8px;
+  color: #a78bfa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.details-header h1 {
+  margin: 0 0 15px;
+  font-size: 36px;
+}
+
+.details-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.details-tags span {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #334155;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.details-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 190px;
+  padding: 18px;
+  border: 1px solid #4c1d95;
+  border-radius: 16px;
+  background: #1e293b;
+  color: #a78bfa;
+}
+
+.details-score div {
+  display: flex;
+  flex-direction: column;
+}
+
+.details-score span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.details-score strong {
+  margin-top: 3px;
+  color: #f8fafc;
+  font-size: 26px;
+}
+
+.details-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #1e293b;
+}
+
+.summary-item svg {
+  color: #a78bfa;
+}
+
+.summary-item div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-item span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.summary-item strong {
+  font-size: 15px;
+  color: #f8fafc;
+}
+
+.details-tech {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 18px;
+  margin-bottom: 30px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #1e293b;
+}
+
+.details-tech span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.details-tech strong {
+  color: #c4b5fd;
+}
+
+.details-answers h2 {
+  margin-bottom: 20px;
+  font-size: 25px;
+}
+
+.details-answer-card {
+  padding: 22px;
+  margin-bottom: 16px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: #1e293b;
+}
+
+.details-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.details-question-header > span {
+  color: #a78bfa;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.answer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.answer-status.answered {
+  color: #86efac;
+}
+
+.answer-status.unanswered {
+  color: #fbbf24;
+}
+
+.details-answer-card h3 {
+  margin: 0 0 16px;
+  color: #f8fafc;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.details-answer-text {
+  padding: 16px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #cbd5e1;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.details-loading,
+.details-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.details-spinner {
+  margin-bottom: 15px;
+  color: #a78bfa;
+  animation: details-spin 1s linear infinite;
+}
+
+.details-error {
+  color: #cbd5e1;
+}
+
+.details-error h2 {
+  color: #f8fafc;
+}
+
+@keyframes details-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .details-page {
+    padding: 25px 15px;
+  }
+
+  .details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .details-header h1 {
+    font-size: 28px;
+  }
+
+  .details-score {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .details-summary {
+    grid-template-columns: 1fr;
+  }
+}
