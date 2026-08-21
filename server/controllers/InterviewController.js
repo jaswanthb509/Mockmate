@@ -1,4 +1,5 @@
 import Interview from "../models/Interview.js";
+import { evaluateInterviewAnswers } from "../services/aiService.js";
 
 export const saveInterview = async (req, res) => {
   try {
@@ -51,6 +52,43 @@ export const saveInterview = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to save interview",
+    });
+  }
+};
+
+export const evaluateInterview = async (req, res) => {
+  try {
+    const { interviewConfig, answers } = req.body;
+
+    if (
+      !interviewConfig ||
+      !interviewConfig.role ||
+      !Array.isArray(answers) ||
+      answers.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview information and answers are required.",
+      });
+    }
+
+    const evaluation = await evaluateInterviewAnswers({
+      interviewConfig,
+      answers,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Interview evaluated successfully.",
+      data: evaluation,
+    });
+  } catch (error) {
+    console.error("Evaluate Interview Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message || "Failed to evaluate interview answers.",
     });
   }
 };

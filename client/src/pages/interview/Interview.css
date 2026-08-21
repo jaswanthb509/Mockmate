@@ -243,6 +243,27 @@
   cursor: not-allowed;
 }
 
+.speech-error,
+.speech-warning {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.speech-error {
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+.speech-warning {
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+}
+
 @media (max-width: 700px) {
   .interview-page {
     padding: 22px 16px;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -26,6 +26,16 @@ const Interview = () => {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(60 * 10);
   const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speechError, setSpeechError] = useState("");
+
+  const recognitionRef = useRef(null);
+  const currentQuestionRef = useRef(0);
+  const baseAnswerRef = useRef("");
+
+  useEffect(() => {
+    currentQuestionRef.current = currentQuestion;
+  }, [currentQuestion]);
 
   useEffect(() => {
     if (!interviewConfig || questions.length === 0) {
@@ -52,6 +62,99 @@ const Interview = () => {
     return () => clearInterval(timer);
   }, [interviewConfig, questions.length]);
 
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setSpeechError("");
+    };
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (
+        let index = event.resultIndex;
+        index < event.results.length;
+        index += 1
+      ) {
+        const transcript =
+          event.results[index][0].transcript;
+
+        if (event.results[index].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      const questionIndex = currentQuestionRef.current;
+
+      setAnswers((previousAnswers) => {
+        const baseAnswer = baseAnswerRef.current;
+
+        const newAnswer = [
+          baseAnswer,
+          finalTranscript,
+          interimTranscript,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        return {
+          ...previousAnswers,
+          [questionIndex]: newAnswer,
+        };
+      });
+    };
+
+    recognition.onerror = (event) => {
+      setIsRecording(false);
+
+      if (event.error === "not-allowed") {
+        setSpeechError(
+          "Microphone permission was denied. Please allow microphone access."
+        );
+      } else if (event.error === "no-speech") {
+        setSpeechError(
+          "No speech was detected. Please speak and try again."
+        );
+      } else if (event.error === "audio-capture") {
+        setSpeechError(
+          "No microphone was found. Please check your microphone."
+        );
+      } else {
+        setSpeechError(
+          `Speech recognition error: ${event.error}`
+        );
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.stop();
+    };
+  }, []);
+
   if (!interviewConfig || questions.length === 0) {
     return null;
   }
@@ -67,23 +170,84 @@ const Interview = () => {
     }));
   };
 
+  const toggleRecording = () => {
+    if (!speechSupported) {
+      setSpeechError(
+        "Speech recognition is not supported. Please use Google Chrome or Microsoft Edge."
+      );
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      setSpeechError(
+        "Speech recognition is not ready yet. Please try again."
+      );
+      return;
+    }
+
+    setSpeechError("");
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    baseAnswerRef.current = answers[currentQuestion] || "";
+
+    try {
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error(
+        "Unable to start speech recognition:",
+        error
+      );
+
+      setSpeechError(
+        "Unable to start recording. Please try again."
+      );
+    }
+  };
+
+  const stopRecording = () => {
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
   const goToNextQuestion = () => {
+    stopRecording();
+
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((previousQuestion) => previousQuestion + 1);
+      setCurrentQuestion(
+        (previousQuestion) => previousQuestion + 1
+      );
     }
   };
 
   const goToPreviousQuestion = () => {
+    stopRecording();
+
     if (currentQuestion > 0) {
-      setCurrentQuestion((previousQuestion) => previousQuestion - 1);
+      setCurrentQuestion(
+        (previousQuestion) => previousQuestion - 1
+      );
     }
   };
 
+  const handleExitInterview = () => {
+    stopRecording();
+    navigate("/setup");
+  };
+
   const handleFinishInterview = () => {
-    const formattedAnswers = questions.map((question, index) => ({
-      question,
-      answer: answers[index]?.trim() || "",
-    }));
+    stopRecording();
+
+    const formattedAnswers = questions.map(
+      (question, index) => ({
+        question,
+        answer: answers[index]?.trim() || "",
+      })
+    );
 
     navigate("/result", {
       state: {
@@ -98,13 +262,16 @@ const Interview = () => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
 
-    return `${String(minutes).padStart(2, "0")}:${String(
-      remainingSeconds
-    ).padStart(2, "0")}`;
+    return `${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(remainingSeconds).padStart(2, "0")}`;
   };
 
   const answeredCount = Object.values(answers).filter(
-    (answer) => typeof answer === "string" && answer.trim().length > 0
+    (answer) =>
+      typeof answer === "string" &&
+      answer.trim().length > 0
   ).length;
 
   const progress =
@@ -117,7 +284,7 @@ const Interview = () => {
           <button
             type="button"
             className="exit-button"
-            onClick={() => navigate("/setup")}
+            onClick={handleExitInterview}
           >
             <ArrowLeft size={18} />
             Exit Interview
@@ -197,11 +364,7 @@ const Interview = () => {
               className={`record-button ${
                 isRecording ? "recording" : ""
               }`}
-              onClick={() =>
-                setIsRecording(
-                  (previousState) => !previousState
-                )
-              }
+              onClick={toggleRecording}
             >
               {isRecording ? (
                 <>
@@ -217,9 +380,22 @@ const Interview = () => {
             </button>
           </div>
 
+          {speechError && (
+            <div className="speech-error">
+              {speechError}
+            </div>
+          )}
+
+          {!speechSupported && (
+            <div className="speech-warning">
+              Speech-to-text is not supported in this browser.
+              You can still type your answer manually.
+            </div>
+          )}
+
           <textarea
             id="answer"
-            placeholder="Type your answer here..."
+            placeholder="Type your answer here or click Record Answer and speak..."
             value={currentAnswer}
             onChange={handleAnswerChange}
           />
