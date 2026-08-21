@@ -5,6 +5,7 @@ export const saveInterview = async (req, res) => {
   try {
     const {
       role,
+      company,
       experience,
       difficulty,
       interviewType,
@@ -31,6 +32,7 @@ export const saveInterview = async (req, res) => {
     const interview = await Interview.create({
       user: req.user._id,
       role,
+      company: company || "",
       experience,
       difficulty,
       interviewType,
@@ -58,29 +60,56 @@ export const saveInterview = async (req, res) => {
 
 export const evaluateInterview = async (req, res) => {
   try {
-    const { interviewConfig, answers } = req.body;
+    const { interviewId } = req.body;
 
-    if (
-      !interviewConfig ||
-      !interviewConfig.role ||
-      !Array.isArray(answers) ||
-      answers.length === 0
-    ) {
+    if (!interviewId) {
       return res.status(400).json({
         success: false,
-        message: "Interview information and answers are required.",
+        message: "Interview ID is required.",
       });
     }
 
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      user: req.user._id,
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found.",
+      });
+    }
+
+    const interviewConfig = {
+      role: interview.role,
+      company: interview.company,
+      experience: interview.experience,
+      difficulty: interview.difficulty,
+      interviewType: interview.interviewType,
+      techStack: interview.techStack,
+    };
+
     const evaluation = await evaluateInterviewAnswers({
       interviewConfig,
-      answers,
+      answers: interview.answers,
     });
+
+    interview.evaluation = {
+      overallScore: evaluation.overallScore,
+      summary: evaluation.summary,
+      strengths: evaluation.strengths || [],
+      improvements: evaluation.improvements || [],
+      questionFeedback: evaluation.questionFeedback || [],
+      evaluatedAt: new Date(),
+    };
+
+    await interview.save();
 
     return res.status(200).json({
       success: true,
-      message: "Interview evaluated successfully.",
-      data: evaluation,
+      message: "Interview evaluated and saved successfully.",
+      data: interview.evaluation,
     });
   } catch (error) {
     console.error("Evaluate Interview Error:", error);
@@ -97,9 +126,13 @@ export const getUserInterviews = async (req, res) => {
   try {
     const interviews = await Interview.find({
       user: req.user._id,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .select(
+        "role company experience difficulty interviewType techStack totalQuestions answeredQuestions completionScore evaluation createdAt"
+      );
 
     return res.status(200).json({
       success: true,
