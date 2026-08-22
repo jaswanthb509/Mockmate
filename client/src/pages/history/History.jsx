@@ -8,8 +8,10 @@ import {
   Loader2,
   Plus,
   Trophy,
+  Building2,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./History.css";
 
 const History = () => {
@@ -22,29 +24,20 @@ const History = () => {
   useEffect(() => {
     const fetchInterviewHistory = async () => {
       try {
-        const token = localStorage.getItem("token");
+        setLoading(true);
+        setError("");
 
-        const response = await fetch(
-          "http://localhost:5000/api/interview/history",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await API.get("/interview/history");
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch interview history"
-          );
-        }
-
-        setInterviews(data.data || []);
+        setInterviews(response.data?.data || []);
       } catch (error) {
-        console.error("History Error:", error);
-        setError(error.message);
+        console.error("Failed to fetch interview history:", error);
+
+        setError(
+          error.response?.data?.message ||
+            error.message ||
+            "Unable to load your interview history."
+        );
       } finally {
         setLoading(false);
       }
@@ -54,6 +47,8 @@ const History = () => {
   }, []);
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
@@ -62,18 +57,32 @@ const History = () => {
   };
 
   const formatTime = (dateString) => {
+    if (!dateString) return "N/A";
+
     return new Date(dateString).toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
     });
   };
 
+  const getScore = (interview) => {
+    if (
+      interview.evaluation &&
+      typeof interview.evaluation.overallScore === "number"
+    ) {
+      return interview.evaluation.overallScore;
+    }
+
+    return interview.completionScore || 0;
+  };
+
   return (
     <div className="history-page">
       <div className="history-container">
         <div className="history-header">
-          <div>
+          <div className="history-header-content">
             <button
+              type="button"
               className="back-button"
               onClick={() => navigate("/dashboard")}
             >
@@ -81,11 +90,20 @@ const History = () => {
               Back to Dashboard
             </button>
 
+            <span className="history-eyebrow">
+              YOUR PROGRESS
+            </span>
+
             <h1>Interview History</h1>
-            <p>Review all your previous mock interviews.</p>
+
+            <p>
+              Review your previous mock interviews and track your
+              improvement over time.
+            </p>
           </div>
 
           <button
+            type="button"
             className="new-interview-button"
             onClick={() => navigate("/setup")}
           >
@@ -95,30 +113,51 @@ const History = () => {
         </div>
 
         {loading && (
-          <div className="history-loading">
-            <Loader2 size={32} className="loading-icon" />
-            <p>Loading your interview history...</p>
+          <div className="history-state-card">
+            <Loader2
+              size={34}
+              className="loading-icon"
+            />
+
+            <h2>Loading your interviews</h2>
+
+            <p>
+              Please wait while we retrieve your interview history.
+            </p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="history-error">
-            {error}
+          <div className="history-error-card">
+            <h2>Unable to load history</h2>
+
+            <p>{error}</p>
+
+            <button
+              type="button"
+              className="retry-button"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </button>
           </div>
         )}
 
         {!loading && !error && interviews.length === 0 && (
-          <div className="empty-history">
-            <FileText size={48} />
+          <div className="history-state-card empty-history">
+            <div className="empty-history-icon">
+              <FileText size={42} />
+            </div>
 
             <h2>No Interviews Yet</h2>
 
             <p>
-              You haven't completed any mock interviews yet.
-              Start your first interview to see your progress here.
+              Complete your first AI mock interview to start tracking
+              your performance and improvement.
             </p>
 
             <button
+              type="button"
               className="new-interview-button"
               onClick={() => navigate("/setup")}
             >
@@ -128,73 +167,143 @@ const History = () => {
           </div>
         )}
 
-        {!loading && !error && interviews.length > 0 && (
-          <div className="history-grid">
-            {interviews.map((interview) => (
-              <div
-                className="history-card"
-                key={interview._id}
-              >
-                <div className="history-card-top">
-                  <div className="history-icon">
-                    <Trophy size={22} />
-                  </div>
-
-                  <span className="history-score">
-                    {interview.completionScore}%
-                  </span>
+        {!loading &&
+          !error &&
+          interviews.length > 0 && (
+            <>
+              <div className="history-summary">
+                <div className="summary-item">
+                  <span>Total Interviews</span>
+                  <strong>{interviews.length}</strong>
                 </div>
 
-                <h2>{interview.role}</h2>
-
-                <div className="history-tags">
-                  <span>{interview.interviewType}</span>
-                  <span>{interview.difficulty}</span>
-                  <span>{interview.experience}</span>
+                <div className="summary-item">
+                  <span>Best Score</span>
+                  <strong>
+                    {Math.max(
+                      ...interviews.map((interview) =>
+                        getScore(interview)
+                      )
+                    )}
+                    %
+                  </strong>
                 </div>
 
-                {interview.techStack && (
-                  <p className="history-tech">
-                    {interview.techStack}
-                  </p>
-                )}
-
-                <div className="history-stats">
-                  <div>
-                    <FileText size={16} />
-                    <span>
-                      {interview.answeredQuestions} /{" "}
-                      {interview.totalQuestions} Answered
-                    </span>
-                  </div>
-
-                  <div>
-                    <Calendar size={16} />
-                    <span>
-                      {formatDate(interview.createdAt)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <Clock size={16} />
-                    <span>
-                      {formatTime(interview.createdAt)}
-                    </span>
-                  </div>
+                <div className="summary-item">
+                  <span>Latest Interview</span>
+                  <strong>
+                    {formatDate(interviews[0]?.createdAt)}
+                  </strong>
                 </div>
-
-                <button
-                  className="view-interview-button"
-                  onClick={() =>
-                    navigate(`/history/${interview._id}`)
-                  }
-                >
-                  View Details
-                </button>
               </div>
-            ))}
-          </div>
-        )}
+
+              <div className="history-grid">
+                {interviews.map((interview) => {
+                  const score = getScore(interview);
+                  const isEvaluated =
+                    interview.evaluation &&
+                    interview.evaluation.evaluatedAt;
+
+                  return (
+                    <div
+                      className="history-card"
+                      key={interview._id}
+                    >
+                      <div className="history-card-top">
+                        <div className="history-icon">
+                          <Trophy size={22} />
+                        </div>
+
+                        <div
+                          className={`history-score ${
+                            isEvaluated
+                              ? "evaluated"
+                              : "completion"
+                          }`}
+                        >
+                          {score}%
+                        </div>
+                      </div>
+
+                      <div className="history-card-title">
+                        <h2>{interview.role}</h2>
+
+                        {interview.company && (
+                          <p className="history-company">
+                            <Building2 size={14} />
+                            {interview.company}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="history-tags">
+                        <span>
+                          {interview.interviewType}
+                        </span>
+
+                        <span>
+                          {interview.difficulty}
+                        </span>
+
+                        <span>
+                          {interview.experience}
+                        </span>
+                      </div>
+
+                      {interview.techStack && (
+                        <div className="history-tech">
+                          <span>Tech Stack</span>
+
+                          <p>{interview.techStack}</p>
+                        </div>
+                      )}
+
+                      <div className="history-divider" />
+
+                      <div className="history-stats">
+                        <div>
+                          <FileText size={16} />
+
+                          <span>
+                            {interview.answeredQuestions} /{" "}
+                            {interview.totalQuestions} answered
+                          </span>
+                        </div>
+
+                        <div>
+                          <Calendar size={16} />
+
+                          <span>
+                            {formatDate(interview.createdAt)}
+                          </span>
+                        </div>
+
+                        <div>
+                          <Clock size={16} />
+
+                          <span>
+                            {formatTime(interview.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="view-interview-button"
+                        onClick={() =>
+                          navigate(
+                            `/history/${interview._id}`
+                          )
+                        }
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
       </div>
     </div>
   );
