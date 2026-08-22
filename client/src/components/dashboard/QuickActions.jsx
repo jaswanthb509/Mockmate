@@ -5,27 +5,32 @@ import {
   History,
   FileText,
   BarChart3,
+  ArrowUpRight,
 } from "lucide-react";
 
 const actions = [
   {
-    title: "Start New Interview",
-    icon: <PlayCircle size={30} />,
+    title: "New Interview",
+    description: "Start practicing now",
+    icon: <PlayCircle size={24} />,
     link: "/setup",
   },
   {
     title: "Interview History",
-    icon: <History size={30} />,
+    description: "Review past sessions",
+    icon: <History size={24} />,
     link: "/history",
   },
   {
     title: "Resume Analyzer",
-    icon: <FileText size={30} />,
+    description: "Get AI-powered insights",
+    icon: <FileText size={24} />,
     link: "/resume",
   },
   {
     title: "Analytics",
-    icon: <BarChart3 size={30} />,
+    description: "Track your improvement",
+    icon: <BarChart3 size={24} />,
     link: "/analytics",
   },
 ];
@@ -33,20 +38,35 @@ const actions = [
 const QuickActions = () => {
   return (
     <section className="quick-actions">
-      <h2>Quick Actions</h2>
+      <div className="quick-actions-header">
+        <div>
+          <span className="quick-actions-eyebrow">WORKSPACE</span>
+          <h2>Quick Actions</h2>
+        </div>
+      </div>
 
       <div className="action-grid">
-        {actions.map((action, index) => (
+        {actions.map((action) => (
           <Link
-            key={index}
+            key={action.title}
             to={action.link}
             className="action-card"
           >
-            <div className="action-icon">
-              {action.icon}
+            <div className="action-card-top">
+              <div className="action-icon">
+                {action.icon}
+              </div>
+
+              <ArrowUpRight
+                size={17}
+                className="action-arrow"
+              />
             </div>
 
-            <h3>{action.title}</h3>
+            <div className="action-card-content">
+              <h3>{action.title}</h3>
+              <p>{action.description}</p>
+            </div>
           </Link>
         ))}
       </div>

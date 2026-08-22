@@ -1,6 +1,10 @@
-import { ArrowUpRight, BriefcaseBusiness } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  BriefcaseBusiness,
+  ChevronRight,
+} from "lucide-react";
 
+import { Link } from "react-router-dom";
 import "./RecentInterviews.css";
 
 const interviews = [
@@ -32,11 +36,17 @@ const RecentInterviews = () => {
     <section className="recent-interviews">
       <div className="recent-interviews-header">
         <div>
-          <p className="section-label">History</p>
-          <h2>Recent Interviews</h2>
+          <p className="section-label">Interview Activity</p>
+          <h2>Your Recent Interviews:</h2>
+          <p className="recent-subtitle">
+            Review your latest interview sessions and performance.
+          </p>
         </div>
 
-        <Link to="/history">
+        <Link
+          to="/history"
+          className="view-all-link"
+        >
           View all
           <ArrowUpRight size={16} />
         </Link>
@@ -46,26 +56,37 @@ const RecentInterviews = () => {
         {interviews.map((interview, index) => (
           <div className="interview-row" key={index}>
             <div className="interview-company-icon">
-              <BriefcaseBusiness size={18} />
+              <BriefcaseBusiness size={19} />
             </div>
 
             <div className="interview-details">
-              <h3>{interview.company}</h3>
-              <p>
-                {interview.role} · {interview.type}
-              </p>
+              <div className="interview-title-row">
+                <h3>{interview.company}</h3>
+
+                <span className="interview-type">
+                  {interview.type}
+                </span>
+              </div>
+
+              <p>{interview.role}</p>
             </div>
 
             <div className="interview-score">
+              <span className="score-label">Score</span>
               <strong>{interview.score}%</strong>
-              <span>{interview.date}</span>
+            </div>
+
+            <div className="interview-date">
+              {interview.date}
             </div>
 
             <Link
               to="/result"
               className="interview-view-button"
+              aria-label={`View ${interview.company} interview`}
             >
-              View
+              <span>View</span>
+              <ChevronRight size={15} />
             </Link>
           </div>
         ))}
