@@ -26,10 +26,10 @@ const Result = () => {
   const [evaluationError, setEvaluationError] = useState("");
   const [evaluation, setEvaluation] = useState(null);
 
-  const hasSavedInterview = useRef(false);
-  const hasEvaluatedInterview = useRef(false);
+  const hasProcessedInterview = useRef(false);
 
   const interviewConfig = location.state?.interviewConfig;
+
   const answers = Array.isArray(location.state?.answers)
     ? location.state.answers
     : [];
@@ -52,49 +52,97 @@ const Result = () => {
 
   useEffect(() => {
     if (
-      hasSavedInterview.current ||
+      hasProcessedInterview.current ||
       !interviewConfig ||
       answers.length === 0
     ) {
       return;
     }
 
-    const saveCompletedInterview = async () => {
-      hasSavedInterview.current = true;
+    const saveAndEvaluateInterview = async () => {
+      hasProcessedInterview.current = true;
 
       try {
         setSaving(true);
         setSaveError("");
+        setEvaluating(true);
+        setEvaluationError("");
 
-        await API.post("/interview/save", {
-          role: interviewConfig.role,
-          experience: interviewConfig.experience,
-          difficulty: interviewConfig.difficulty,
-          interviewType: interviewConfig.interviewType,
-          techStack: interviewConfig.techStack || "",
-          totalQuestions,
-          answeredQuestions: answeredCount,
-          completionScore,
-          answers,
-        });
+        const saveResponse = await API.post(
+          "/interview/save",
+          {
+            role: interviewConfig.role,
+            experience: interviewConfig.experience,
+            difficulty: interviewConfig.difficulty,
+            interviewType: interviewConfig.interviewType,
+            techStack: interviewConfig.techStack || "",
+            company: interviewConfig.company || "",
+            totalQuestions,
+            answeredQuestions: answeredCount,
+            completionScore,
+            answers,
+          }
+        );
+
+        const savedData =
+          saveResponse.data?.data ||
+          saveResponse.data;
+
+        const interviewId =
+          savedData?._id ||
+          savedData?.id ||
+          savedData?.interviewId ||
+          savedData?.interview?._id ||
+          savedData?.interview?.id;
+
+        if (!interviewId) {
+          throw new Error(
+            "Interview was saved, but no Interview ID was returned."
+          );
+        }
+
+        setSaving(false);
+
+        const evaluationResponse = await API.post(
+          "/interview/evaluate",
+          {
+            interviewId,
+          }
+        );
+
+        setEvaluation(
+          evaluationResponse.data?.data ||
+          evaluationResponse.data?.evaluation ||
+          null
+        );
       } catch (error) {
         console.error(
-          "Failed to save interview:",
+          "Failed to process interview:",
           error
         );
 
-        hasSavedInterview.current = false;
-
-        setSaveError(
+        const message =
           error.response?.data?.message ||
-            "Failed to save your interview."
-        );
+          error.message ||
+          "Failed to process your interview.";
+
+        if (
+          error.config?.url?.includes("/interview/save")
+        ) {
+          setSaveError(message);
+        } else {
+          setEvaluationError(message);
+        }
+
+        setSaving(false);
+        setEvaluating(false);
       } finally {
         setSaving(false);
+        setEvaluating(false);
       }
     };
 
-    saveCompletedInterview();
+    saveAndEvaluateInterview();
   }, [
     interviewConfig,
     answers,
@@ -102,51 +150,6 @@ const Result = () => {
     answeredCount,
     completionScore,
   ]);
-
-  useEffect(() => {
-    if (
-      hasEvaluatedInterview.current ||
-      !interviewConfig ||
-      answers.length === 0
-    ) {
-      return;
-    }
-
-    const evaluateCompletedInterview = async () => {
-      hasEvaluatedInterview.current = true;
-
-      try {
-        setEvaluating(true);
-        setEvaluationError("");
-
-        const response = await API.post(
-          "/interview/evaluate",
-          {
-            interviewConfig,
-            answers,
-          }
-        );
-
-        setEvaluation(response.data?.data || null);
-      } catch (error) {
-        console.error(
-          "Failed to evaluate interview:",
-          error
-        );
-
-        hasEvaluatedInterview.current = false;
-
-        setEvaluationError(
-          error.response?.data?.message ||
-            "Failed to evaluate your interview."
-        );
-      } finally {
-        setEvaluating(false);
-      }
-    };
-
-    evaluateCompletedInterview();
-  }, [interviewConfig, answers]);
 
   if (
     !location.state ||
@@ -181,7 +184,9 @@ const Result = () => {
       : null;
 
   const displayScore =
-    aiScore !== null ? aiScore : completionScore;
+    aiScore !== null
+      ? aiScore
+      : completionScore;
 
   const getResultMessage = () => {
     if (aiScore === null) {
@@ -325,9 +330,7 @@ const Result = () => {
                   <h3>Your Strengths</h3>
                 </div>
 
-                {Array.isArray(
-                  evaluation.strengths
-                ) &&
+                {Array.isArray(evaluation.strengths) &&
                 evaluation.strengths.length > 0 ? (
                   <ul>
                     {evaluation.strengths.map(
@@ -380,9 +383,7 @@ const Result = () => {
         )}
 
         <div className="answers-review">
-          <h2>
-            Your Responses
-          </h2>
+          <h2>Your Responses</h2>
 
           {answers.map((item, index) => {
             const isAnswered =
@@ -406,9 +407,7 @@ const Result = () => {
                     {!evaluating &&
                       typeof questionFeedback?.score ===
                         "number" && (
-                        <span
-                          className="question-score"
-                        >
+                        <span className="question-score">
                           {questionFeedback.score}%
                         </span>
                       )}
@@ -438,9 +437,7 @@ const Result = () => {
                 {!evaluating &&
                   questionFeedback?.feedback && (
                     <div className="question-feedback">
-                      <h4>
-                        AI Feedback
-                      </h4>
+                      <h4>AI Feedback</h4>
 
                       <p>
                         {questionFeedback.feedback}
