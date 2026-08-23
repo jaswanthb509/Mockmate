@@ -13,8 +13,18 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-  console.log("REQUEST RECEIVED:", req.method, req.url);
-  console.log("BODY:", req.body);
+  console.log(
+    `${req.method} ${req.originalUrl}`
+  );
+
+  if (
+    req.method === "POST" ||
+    req.method === "PUT" ||
+    req.method === "PATCH"
+  ) {
+    console.log("BODY:", req.body);
+  }
+
   next();
 });
 

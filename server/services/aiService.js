@@ -13,6 +13,8 @@ const ai = new GoogleGenAI({
   apiKey,
 });
 
+const MODEL_NAME = "gemini-2.5-flash";
+
 const cleanAndParseJSON = (text) => {
   const cleanedText = text
     .replace(/```json/gi, "")
@@ -20,6 +22,57 @@ const cleanAndParseJSON = (text) => {
     .trim();
 
   return JSON.parse(cleanedText);
+};
+
+const sleep = (milliseconds) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+};
+
+const generateContentWithRetry = async (
+  prompt,
+  maxRetries = 3
+) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+      });
+
+      return response;
+    } catch (error) {
+      lastError = error;
+
+      const status = error.status;
+
+      const shouldRetry =
+        status === 429 ||
+        status === 500 ||
+        status === 502 ||
+        status === 503 ||
+        status === 504;
+
+      if (!shouldRetry || attempt === maxRetries) {
+        throw error;
+      }
+
+      const delay = 2000 * Math.pow(2, attempt);
+
+      console.log(
+        `AI request failed with status ${status}. Retrying in ${
+          delay / 1000
+        } seconds...`
+      );
+
+      await sleep(delay);
+    }
+  }
+
+  throw lastError;
 };
 
 export const generateInterviewQuestions = async (data) => {
@@ -50,15 +103,20 @@ Do not include any explanation outside the JSON.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const response = await generateContentWithRetry(prompt);
 
     const questions = cleanAndParseJSON(response.text);
 
     if (!Array.isArray(questions)) {
-      throw new Error("AI did not return an array of questions.");
+      throw new Error(
+        "AI did not return an array of questions."
+      );
+    }
+
+    if (questions.length !== data.numberOfQuestions) {
+      throw new Error(
+        `AI returned ${questions.length} questions instead of ${data.numberOfQuestions}.`
+      );
     }
 
     return questions;
@@ -67,6 +125,18 @@ Do not include any explanation outside the JSON.
       "Question Generation Error:",
       error.message
     );
+
+    if (error.status === 503) {
+      throw new Error(
+        "AI service is temporarily busy. Please try again in a moment."
+      );
+    }
+
+    if (error.status === 429) {
+      throw new Error(
+        "AI request limit reached. Please wait a moment and try again."
+      );
+    }
 
     throw new Error(
       "Failed to generate interview questions."
@@ -154,10 +224,7 @@ Do not include any text outside the JSON.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const response = await generateContentWithRetry(prompt);
 
     const evaluation = cleanAndParseJSON(response.text);
 
@@ -180,19 +247,41 @@ Do not include any text outside the JSON.
 
     evaluation.overallScore = Math.max(
       0,
-      Math.min(100, Math.round(evaluation.overallScore))
+      Math.min(
+        100,
+        Math.round(evaluation.overallScore)
+      )
     );
 
     evaluation.questionFeedback =
       evaluation.questionFeedback.map((item) => ({
         score: Math.max(
           0,
-          Math.min(100, Math.round(Number(item.score) || 0))
+          Math.min(
+            100,
+            Math.round(Number(item.score) || 0)
+          )
         ),
         feedback:
           item.feedback ||
           "No detailed feedback was provided.",
       }));
+
+    evaluation.strengths = Array.isArray(
+      evaluation.strengths
+    )
+      ? evaluation.strengths
+      : [];
+
+    evaluation.improvements = Array.isArray(
+      evaluation.improvements
+    )
+      ? evaluation.improvements
+      : [];
+
+    evaluation.summary =
+      evaluation.summary ||
+      "Your interview performance has been evaluated.";
 
     return evaluation;
   } catch (error) {
@@ -200,6 +289,18 @@ Do not include any text outside the JSON.
       "Interview Evaluation Error:",
       error.message
     );
+
+    if (error.status === 503) {
+      throw new Error(
+        "AI evaluation service is temporarily busy. Please try again in a moment."
+      );
+    }
+
+    if (error.status === 429) {
+      throw new Error(
+        "AI request limit reached. Please wait a moment and try again."
+      );
+    }
 
     throw new Error(
       "Failed to evaluate interview answers."
