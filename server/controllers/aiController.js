@@ -12,52 +12,126 @@ const generateAIQuestions = async (req, res) => {
       company,
     } = req.body;
 
-    if (!role || !experience || !difficulty || !interviewType) {
+    if (
+      !role ||
+      !experience ||
+      !difficulty ||
+      !interviewType
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Missing required interview configuration.",
+        message:
+          "Missing required interview configuration.",
       });
     }
 
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
         success: false,
-        message: "AI service is not configured properly.",
+        message:
+          "AI service is not configured properly.",
       });
     }
 
-    const questionCount = Number(numberOfQuestions) || 10;
+    const questionCount = Math.min(
+      Math.max(Number(numberOfQuestions) || 10, 1),
+      20
+    );
+
+    const cleanCompany = company?.trim();
+    const cleanTechStack = techStack?.trim();
 
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
-    const prompt = `
-You are an expert interview question generator.
+    const companyInstructions = cleanCompany
+      ? `
+COMPANY-SPECIFIC PREPARATION:
 
-Generate exactly ${questionCount} interview questions based on the following interview configuration.
+The candidate is preparing specifically for ${cleanCompany}.
+
+Tailor the interview to the likely skills, problem-solving expectations,
+engineering practices, and interview themes relevant to a ${role} candidate
+at ${cleanCompany}.
+
+Important:
+- Do NOT claim that the questions are real, leaked, confidential, or exact
+  questions from ${cleanCompany}.
+- Generate original practice questions inspired by plausible interview themes.
+- Make the company influence the style and focus of the questions.
+- Do not mention that you are guessing or simulating the company's process.
+`
+      : `
+GENERAL INTERVIEW PREPARATION:
+
+No target company was provided.
+
+Generate high-quality general interview questions that are appropriate
+for the selected role and experience level.
+`;
+
+    const prompt = `
+You are MockMate AI, an expert technical and behavioral interview coach.
+
+Generate exactly ${questionCount} high-quality mock interview questions.
+
+INTERVIEW CONFIGURATION:
 
 Job Role: ${role}
 Experience Level: ${experience}
 Difficulty: ${difficulty}
 Interview Type: ${interviewType}
-Technology Stack: ${techStack || "Not specified"}
-Target Company: ${company || "General interview preparation"}
+Technology Stack: ${
+      cleanTechStack || "Not specified"
+    }
+Target Company: ${
+      cleanCompany || "General interview preparation"
+    }
 
-Rules:
+${companyInstructions}
+
+QUESTION REQUIREMENTS:
 
 1. Generate exactly ${questionCount} questions.
-2. Questions must match the specified job role.
-3. Questions must be appropriate for the experience level.
-4. Questions must match the selected difficulty.
-5. For Technical interviews, focus on technical concepts, problem-solving, frameworks, technologies, and the provided technology stack.
-6. For HR interviews, focus on behavioral, communication, teamwork, motivation, strengths, weaknesses, and workplace situations.
-7. For Mixed interviews, provide a balanced combination of Technical and HR questions.
-8. If a target company is provided, tailor the questions to relevant skills and a plausible interview style.
-9. Do not claim that these are actual confidential questions from the company.
-10. Return only the questions.
+2. Every question must be relevant to the selected Job Role.
+3. Match the complexity to the selected Experience Level.
+4. Match the complexity to the selected Difficulty.
+5. Avoid duplicate or very similar questions.
+6. Questions should be realistic and suitable for a real mock interview.
+7. Make questions clear, specific, and answerable.
+8. Do not include answers, hints, explanations, numbering, categories,
+   markdown, or extra text.
 
-Return the response as valid JSON in exactly this format:
+INTERVIEW TYPE RULES:
+
+For Technical:
+- Focus on programming, core computer science, frameworks, architecture,
+  debugging, problem-solving, and the provided technology stack.
+- Include conceptual and scenario-based questions.
+- For Medium and Hard difficulty, include questions that test reasoning
+  and practical decision-making.
+
+For HR:
+- Focus on communication, teamwork, conflict resolution, motivation,
+  leadership, strengths, weaknesses, ownership, and workplace scenarios.
+- Make behavioral questions realistic and specific.
+
+For Mixed:
+- Generate a balanced combination of Technical and HR questions.
+- Keep the mix appropriate for the role and experience level.
+
+TECH STACK RULES:
+
+${
+  cleanTechStack
+    ? `The candidate provided this technology stack: ${cleanTechStack}.
+Prioritize relevant questions from these technologies when appropriate.`
+    : `No specific technology stack was provided.
+Use technologies and concepts naturally relevant to the job role.`
+}
+
+Return ONLY valid JSON in exactly this format:
 
 {
   "questions": [
@@ -78,7 +152,9 @@ Return the response as valid JSON in exactly this format:
     const responseText = response.text?.trim();
 
     if (!responseText) {
-      throw new Error("AI returned an empty response.");
+      throw new Error(
+        "AI returned an empty response."
+      );
     }
 
     let parsedResponse;
@@ -91,14 +167,14 @@ Return the response as valid JSON in exactly this format:
         responseText
       );
 
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to process the generated interview questions. Please try again.",
-      });
+      throw new Error(
+        "Unable to process the generated interview questions."
+      );
     }
 
-    const questions = Array.isArray(parsedResponse.questions)
+    const questions = Array.isArray(
+      parsedResponse.questions
+    )
       ? parsedResponse.questions
           .filter(
             (question) =>
@@ -110,28 +186,41 @@ Return the response as valid JSON in exactly this format:
       : [];
 
     if (questions.length === 0) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "No interview questions were generated. Please try again.",
-      });
+      throw new Error(
+        "No interview questions were generated."
+      );
     }
 
     return res.status(200).json({
       success: true,
-      message:
-        "Interview questions generated successfully.",
+      message: cleanCompany
+        ? `Company-focused interview questions generated for ${cleanCompany}.`
+        : "Interview questions generated successfully.",
       data: {
         questions,
       },
     });
   } catch (error) {
-    console.error("AI Generation Error:", error);
+    console.error(
+      "AI Generation Error:",
+      error
+    );
 
-    return res.status(500).json({
+    const statusCode =
+      error.status === 429 ||
+      error.status === 503
+        ? 503
+        : 500;
+
+    return res.status(statusCode).json({
       success: false,
       message:
-        "Unable to generate your interview right now. Please try again in a moment.",
+        error.status === 503
+          ? "AI is currently experiencing high demand. Please try again in a moment."
+          : error.status === 429
+          ? "AI request limit reached. Please wait a moment and try again."
+          : error.message ||
+            "Unable to generate your interview right now. Please try again.",
     });
   }
 };
