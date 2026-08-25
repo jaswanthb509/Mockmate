@@ -5,7 +5,7 @@ import {
   evaluateInterview,
   getUserInterviews,
   getInterviewById,
-} from "../controllers/interviewController.js";
+} from "../controllers/InterviewController.js";
 
 import generateAIQuestions from "../controllers/aiController.js";
 
