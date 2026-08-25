@@ -1,29 +1,32 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   console.log(
     `${req.method} ${req.originalUrl}`
   );
-
-  if (
-    req.method === "POST" ||
-    req.method === "PUT" ||
-    req.method === "PATCH"
-  ) {
-    console.log("BODY:", req.body);
-  }
 
   next();
 });
@@ -31,17 +34,56 @@ app.use((req, res, next) => {
 connectDB();
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/interview", interviewRoutes);
+
+app.use("/api/resume", resumeRoutes);
 
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "MockMate API Running...",
+    message: "MockMate API is running...",
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error(
+    "Server Error:",
+    err.message
+  );
+
+  if (err.name === "MulterError") {
+    return res.status(400).json({
+      success: false,
+      message:
+        err.code === "LIMIT_FILE_SIZE"
+          ? "File is too large. Maximum allowed size is 5 MB."
+          : err.message,
+    });
+  }
+
+  if (
+    err.message ===
+    "Only PDF and DOCX resume files are allowed."
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message:
+      err.message ||
+      "Something went wrong on the server.",
   });
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 });

@@ -1,7 +1,13 @@
 .resume-analyzer-page {
   min-height: 100vh;
   padding: 42px 24px 70px;
-  background: #0f172a;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(124, 58, 237, 0.1),
+      transparent 32%
+    ),
+    #0f172a;
 }
 
 .resume-analyzer-container {
@@ -29,31 +35,33 @@
   opacity: 0.8;
 }
 
-.resume-header {
+.resume-analyzer-header {
   margin-bottom: 32px;
 }
 
-.resume-label {
+.resume-label,
+.resume-section-label {
   margin: 0 0 8px;
 
   color: #a78bfa;
 
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.12em;
 }
 
-.resume-header h1 {
+.resume-analyzer-header h1 {
   margin: 0;
 
   color: #f8fafc;
 
-  font-size: 36px;
-  font-weight: 700;
+  font-size: 38px;
+  font-weight: 750;
+  line-height: 1.2;
 }
 
-.resume-header > p:last-child {
-  max-width: 700px;
+.resume-analyzer-header > p:last-child {
+  max-width: 760px;
   margin: 10px 0 0;
 
   color: #94a3b8;
@@ -62,59 +70,42 @@
   line-height: 1.7;
 }
 
+/* =========================
+   UPLOAD CARD
+========================= */
+
 .resume-upload-card {
   padding: 30px;
 
   background:
     radial-gradient(
       circle at top right,
-      rgba(124, 58, 237, 0.1),
+      rgba(124, 58, 237, 0.12),
       transparent 35%
     ),
     #172033;
 
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 22px;
 
   box-shadow:
-    0 18px 45px rgba(2, 6, 23, 0.22);
+    0 18px 45px rgba(2, 6, 23, 0.25);
 }
 
-.resume-card-heading {
-  display: flex;
-  align-items: flex-start;
-  gap: 17px;
-
-  margin-bottom: 26px;
+.resume-upload-header {
+  margin-bottom: 24px;
 }
 
-.resume-heading-icon {
-  width: 58px;
-  height: 58px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-
-  color: #a78bfa;
-
-  background: rgba(124, 58, 237, 0.14);
-
-  border: 1px solid rgba(167, 139, 250, 0.16);
-  border-radius: 17px;
-}
-
-.resume-card-heading h2 {
-  margin: 2px 0 7px;
+.resume-upload-header h2 {
+  margin: 0 0 7px;
 
   color: #f8fafc;
 
-  font-size: 23px;
+  font-size: 24px;
+  font-weight: 700;
 }
 
-.resume-card-heading p {
+.resume-upload-header > div > p:last-child {
   margin: 0;
 
   color: #94a3b8;
@@ -124,7 +115,7 @@
 }
 
 .resume-drop-zone {
-  min-height: 270px;
+  min-height: 250px;
   padding: 32px 20px;
 
   display: flex;
@@ -132,25 +123,27 @@
   align-items: center;
   justify-content: center;
 
+  cursor: pointer;
   text-align: center;
 
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(15, 23, 42, 0.45);
 
-  border: 1.5px dashed rgba(167, 139, 250, 0.35);
+  border: 1.5px dashed rgba(167, 139, 250, 0.4);
   border-radius: 18px;
 
   transition:
     border-color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .resume-drop-zone:hover {
-  background: rgba(124, 58, 237, 0.05);
-
+  background: rgba(124, 58, 237, 0.07);
   border-color: #a78bfa;
+  transform: translateY(-1px);
 }
 
-.resume-file-input {
+.resume-drop-zone input {
   display: none;
 }
 
@@ -168,6 +161,7 @@
 
   background: rgba(124, 58, 237, 0.14);
 
+  border: 1px solid rgba(167, 139, 250, 0.15);
   border-radius: 17px;
 }
 
@@ -176,88 +170,45 @@
 
   color: #e2e8f0;
 
-  font-size: 16px;
+  font-size: 17px;
 }
 
-.resume-drop-zone > p {
+.resume-drop-zone p {
   margin: 0 0 13px;
 
-  color: #64748b;
+  color: #94a3b8;
 
   font-size: 13px;
 }
 
-.resume-choose-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 11px 19px;
-
-  cursor: pointer;
-
-  color: #ffffff;
-
-  background:
-    linear-gradient(
-      135deg,
-      #7c3aed,
-      #6d28d9
-    );
-
-  border-radius: 10px;
-
-  font-size: 13px;
-  font-weight: 700;
-
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.resume-choose-button:hover {
-  transform: translateY(-2px);
-  opacity: 0.95;
-}
-
-.resume-drop-zone > span {
-  margin-top: 14px;
-
+.resume-drop-zone span {
   color: #64748b;
 
   font-size: 11px;
   font-weight: 600;
 }
 
-.selected-file {
+/* =========================
+   SELECTED FILE
+========================= */
+
+.resume-selected-file {
   width: 100%;
-  max-width: 650px;
-  padding: 18px;
+  padding: 18px 20px;
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
 
-  text-align: left;
+  background: rgba(5, 150, 105, 0.07);
 
-  background: rgba(5, 150, 105, 0.06);
-
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  border-radius: 14px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 16px;
 }
 
-.selected-file-info {
-  min-width: 0;
-
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.selected-file-icon {
-  width: 45px;
-  height: 45px;
+.resume-file-icon {
+  width: 48px;
+  height: 48px;
 
   display: flex;
   align-items: center;
@@ -267,25 +218,30 @@
 
   color: #34d399;
 
-  background: rgba(5, 150, 105, 0.12);
-
-  border-radius: 12px;
+  background: rgba(5, 150, 105, 0.14);
+  border-radius: 13px;
 }
 
-.selected-file-info h3 {
+.resume-file-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.resume-file-details h3 {
   margin: 0 0 5px;
 
   overflow: hidden;
 
   color: #e2e8f0;
 
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
 
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.selected-file-info p {
+.resume-file-details p {
   margin: 0;
 
   color: #94a3b8;
@@ -293,9 +249,9 @@
   font-size: 12px;
 }
 
-.remove-file-button {
-  width: 38px;
-  height: 38px;
+.resume-remove-button {
+  width: 40px;
+  height: 40px;
 
   display: flex;
   align-items: center;
@@ -309,22 +265,54 @@
 
   background: rgba(225, 29, 72, 0.08);
 
-  border: 1px solid rgba(225, 29, 72, 0.15);
-  border-radius: 10px;
+  border: 1px solid rgba(225, 29, 72, 0.18);
+  border-radius: 11px;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
-.resume-error {
-  margin: 13px 0 0;
+.resume-remove-button:hover:not(:disabled) {
+  background: rgba(225, 29, 72, 0.15);
+  transform: scale(1.04);
+}
+
+.resume-remove-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================
+   ERROR MESSAGE
+========================= */
+
+.resume-error-message {
+  margin-top: 15px;
+  padding: 12px 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
 
   color: #fda4af;
+
+  background: rgba(225, 29, 72, 0.08);
+
+  border: 1px solid rgba(225, 29, 72, 0.18);
+  border-radius: 11px;
 
   font-size: 13px;
   font-weight: 600;
 }
 
+/* =========================
+   ANALYZE BUTTON
+========================= */
+
 .resume-analyze-button {
   width: 100%;
-  min-height: 50px;
+  min-height: 54px;
 
   margin-top: 22px;
 
@@ -345,64 +333,324 @@
     );
 
   border: none;
-  border-radius: 12px;
+  border-radius: 13px;
+
+  box-shadow:
+    0 10px 25px rgba(109, 40, 217, 0.25);
 
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 750;
 
   transition:
     transform 0.2s ease,
-    opacity 0.2s ease;
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .resume-analyze-button:hover:not(:disabled) {
   transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 30px rgba(109, 40, 217, 0.35);
 }
 
 .resume-analyze-button:disabled {
   cursor: not-allowed;
-
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
-.resume-features {
-  margin-top: 24px;
-
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+.resume-loading-icon {
+  animation: resume-spin 1s linear infinite;
 }
 
-.resume-feature-card {
-  padding: 23px;
-
-  background: #172033;
-
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 18px;
+@keyframes resume-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.resume-feature-card span {
-  display: block;
+/* =========================
+   AI RESULT CARD
+========================= */
 
-  margin-bottom: 15px;
+.resume-result-card {
+  margin-top: 30px;
+  padding: 30px;
 
-  color: #a78bfa;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(124, 58, 237, 0.09),
+      transparent 32%
+    ),
+    #172033;
 
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px;
+
+  box-shadow:
+    0 18px 45px rgba(2, 6, 23, 0.22);
 }
 
-.resume-feature-card h3 {
-  margin: 0 0 9px;
+.resume-result-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.resume-result-icon {
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  color: #34d399;
+
+  background: rgba(16, 185, 129, 0.12);
+
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  border-radius: 16px;
+}
+
+.resume-result-header h2 {
+  margin: 2px 0 7px;
 
   color: #f8fafc;
 
-  font-size: 16px;
+  font-size: 25px;
+  font-weight: 700;
 }
 
-.resume-feature-card p {
+.resume-result-header > div:last-child > p:last-child {
+  margin: 0;
+
+  color: #94a3b8;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.resume-file-result {
+  padding: 14px 16px;
+  margin-bottom: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  background: rgba(15, 23, 42, 0.5);
+
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 13px;
+}
+
+.resume-file-result span {
+  color: #94a3b8;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.resume-file-result strong {
+  overflow: hidden;
+
+  color: #e2e8f0;
+
+  font-size: 13px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================
+   SCORE CARDS
+========================= */
+
+.resume-score-grid {
+  margin-bottom: 24px;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.resume-score-card {
+  min-height: 190px;
+  padding: 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(124, 58, 237, 0.11),
+      rgba(15, 23, 42, 0.5)
+    );
+
+  border: 1px solid rgba(167, 139, 250, 0.16);
+  border-radius: 18px;
+}
+
+.resume-score-icon {
+  width: 46px;
+  height: 46px;
+
+  margin-bottom: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #a78bfa;
+
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 14px;
+}
+
+.resume-score-card span {
+  margin-bottom: 9px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.resume-score-card strong {
+  color: #f8fafc;
+
+  font-size: 30px;
+  font-weight: 800;
+}
+
+/* =========================
+   ANALYSIS SECTIONS
+========================= */
+
+.resume-analysis-section {
+  padding: 23px;
+  margin-bottom: 20px;
+
+  background: rgba(15, 23, 42, 0.42);
+
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 17px;
+}
+
+.resume-analysis-heading {
+  margin-bottom: 15px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  color: #a78bfa;
+}
+
+.resume-analysis-heading h3 {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.resume-summary-text {
+  margin: 0;
+
+  color: #cbd5e1;
+
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* =========================
+   STRENGTHS + IMPROVEMENTS
+========================= */
+
+.resume-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.resume-analysis-grid .resume-analysis-section {
+  height: 100%;
+}
+
+.resume-feedback-list {
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+
+  list-style: none;
+}
+
+.resume-feedback-list li {
+  position: relative;
+
+  padding: 12px 14px 12px 38px;
+
+  color: #cbd5e1;
+
+  background: rgba(30, 41, 59, 0.58);
+
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  border-radius: 11px;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.resume-feedback-list li::before {
+  content: "✓";
+
+  position: absolute;
+  left: 13px;
+  top: 12px;
+
+  width: 17px;
+  height: 17px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #34d399;
+
+  background: rgba(16, 185, 129, 0.12);
+  border-radius: 50%;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.resume-analysis-grid
+  .resume-analysis-section:nth-child(2)
+  .resume-feedback-list
+  li::before {
+  content: "!";
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.resume-empty-feedback {
   margin: 0;
 
   color: #94a3b8;
@@ -411,8 +659,13 @@
   line-height: 1.7;
 }
 
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 800px) {
-  .resume-features {
+  .resume-score-grid,
+  .resume-analysis-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -422,23 +675,45 @@
     padding: 28px 16px 50px;
   }
 
-  .resume-upload-card {
+  .resume-back-button {
+    margin-bottom: 25px;
+  }
+
+  .resume-analyzer-header {
+    margin-bottom: 25px;
+  }
+
+  .resume-analyzer-header h1 {
+    font-size: 30px;
+  }
+
+  .resume-upload-card,
+  .resume-result-card {
     padding: 20px;
   }
 
-  .resume-header h1 {
-    font-size: 29px;
+  .resume-drop-zone {
+    min-height: 220px;
   }
 
-  .resume-card-heading {
+  .resume-result-header {
     flex-direction: column;
   }
 
-  .resume-drop-zone {
-    min-height: 240px;
+  .resume-file-result {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .selected-file {
-    align-items: flex-start;
+  .resume-file-result strong {
+    max-width: 100%;
+  }
+
+  .resume-score-card {
+    min-height: 165px;
+  }
+
+  .resume-analysis-section {
+    padding: 18px;
   }
 }

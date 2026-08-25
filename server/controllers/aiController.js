@@ -38,8 +38,15 @@ const generateAIQuestions = async (req, res) => {
       20
     );
 
-    const cleanCompany = company?.trim();
-    const cleanTechStack = techStack?.trim();
+    const cleanCompany =
+      typeof company === "string"
+        ? company.trim()
+        : "";
+
+    const cleanTechStack =
+      typeof techStack === "string"
+        ? techStack.trim()
+        : "";
 
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
@@ -51,30 +58,33 @@ COMPANY-SPECIFIC PREPARATION:
 
 The candidate is preparing specifically for ${cleanCompany}.
 
-Tailor the interview to the likely skills, problem-solving expectations,
-engineering practices, and interview themes relevant to a ${role} candidate
+Tailor the interview questions to the likely skills,
+problem-solving expectations, engineering practices,
+and interview themes relevant to a ${role} candidate
 at ${cleanCompany}.
 
-Important:
-- Do NOT claim that the questions are real, leaked, confidential, or exact
-  questions from ${cleanCompany}.
-- Generate original practice questions inspired by plausible interview themes.
-- Make the company influence the style and focus of the questions.
-- Do not mention that you are guessing or simulating the company's process.
+Important rules:
+- Do NOT claim these are real, leaked, confidential,
+  or exact questions from ${cleanCompany}.
+- Generate original practice questions.
+- Let the target company influence the style and focus
+  of the questions.
 `
       : `
 GENERAL INTERVIEW PREPARATION:
 
 No target company was provided.
 
-Generate high-quality general interview questions that are appropriate
-for the selected role and experience level.
+Generate high-quality general interview questions
+appropriate for the selected role and experience level.
 `;
 
     const prompt = `
-You are MockMate AI, an expert technical and behavioral interview coach.
+You are MockMate AI, an expert technical and behavioral
+interview coach.
 
-Generate exactly ${questionCount} high-quality mock interview questions.
+Generate exactly ${questionCount} high-quality mock
+interview questions.
 
 INTERVIEW CONFIGURATION:
 
@@ -94,41 +104,49 @@ ${companyInstructions}
 QUESTION REQUIREMENTS:
 
 1. Generate exactly ${questionCount} questions.
-2. Every question must be relevant to the selected Job Role.
-3. Match the complexity to the selected Experience Level.
-4. Match the complexity to the selected Difficulty.
+2. Every question must be relevant to the selected role.
+3. Match the questions to the selected experience level.
+4. Match the complexity to the selected difficulty.
 5. Avoid duplicate or very similar questions.
-6. Questions should be realistic and suitable for a real mock interview.
-7. Make questions clear, specific, and answerable.
-8. Do not include answers, hints, explanations, numbering, categories,
-   markdown, or extra text.
+6. Questions should be realistic for a mock interview.
+7. Make every question clear and answerable.
+8. Do not include answers, hints, explanations,
+   numbering, markdown, or extra text.
 
 INTERVIEW TYPE RULES:
 
 For Technical:
-- Focus on programming, core computer science, frameworks, architecture,
-  debugging, problem-solving, and the provided technology stack.
+- Focus on programming, computer science concepts,
+  frameworks, architecture, debugging, problem-solving,
+  and relevant technologies.
 - Include conceptual and scenario-based questions.
-- For Medium and Hard difficulty, include questions that test reasoning
-  and practical decision-making.
+- For Medium and Hard difficulty, test reasoning and
+  practical decision-making.
 
 For HR:
-- Focus on communication, teamwork, conflict resolution, motivation,
-  leadership, strengths, weaknesses, ownership, and workplace scenarios.
+- Focus on communication, teamwork, conflict resolution,
+  motivation, leadership, strengths, weaknesses,
+  ownership, and workplace scenarios.
 - Make behavioral questions realistic and specific.
 
 For Mixed:
-- Generate a balanced combination of Technical and HR questions.
-- Keep the mix appropriate for the role and experience level.
+- Generate a balanced combination of Technical and HR
+  questions.
+- Keep the balance appropriate for the role and
+  experience level.
 
 TECH STACK RULES:
 
 ${
   cleanTechStack
-    ? `The candidate provided this technology stack: ${cleanTechStack}.
-Prioritize relevant questions from these technologies when appropriate.`
+    ? `The candidate provided this technology stack:
+${cleanTechStack}.
+
+Prioritize relevant technologies when appropriate.`
     : `No specific technology stack was provided.
-Use technologies and concepts naturally relevant to the job role.`
+
+Use technologies and concepts naturally relevant to the
+selected job role.`
 }
 
 Return ONLY valid JSON in exactly this format:
@@ -142,7 +160,7 @@ Return ONLY valid JSON in exactly this format:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

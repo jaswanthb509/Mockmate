@@ -1,47 +1,32 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
-  FileText,
   Upload,
+  FileText,
   X,
+  LoaderCircle,
   CheckCircle2,
+  AlertCircle,
+  Target,
+  Sparkles,
+  TrendingUp,
+  CircleAlert,
 } from "lucide-react";
 
 import "./ResumeAnalyzer.css";
 
 const ResumeAnalyzer = () => {
-  const fileInputRef = useRef(null);
-
   const [selectedFile, setSelectedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
-
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      setError("Please upload a PDF or DOCX file.");
-      setSelectedFile(null);
-      return;
-    }
-
     setError("");
-    setSelectedFile(file);
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-
-    const file = event.dataTransfer.files?.[0];
+    setResult(null);
 
     if (!file) {
       return;
@@ -53,43 +38,83 @@ const ResumeAnalyzer = () => {
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      setError("Please upload a PDF or DOCX file.");
       setSelectedFile(null);
+      setError("Please upload a PDF or DOCX resume.");
+      event.target.value = "";
       return;
     }
 
-    setError("");
+    if (file.size > 5 * 1024 * 1024) {
+      setSelectedFile(null);
+      setError("Resume file must be smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
     setSelectedFile(file);
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
-
-  const removeFile = () => {
+  const handleRemoveFile = () => {
     setSelectedFile(null);
+    setResult(null);
     setError("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyzeResume = async () => {
     if (!selectedFile) {
-      setError("Please choose a resume before analyzing.");
+      setError("Please select a resume before analyzing.");
       return;
     }
 
-    setError("");
+    try {
+      setLoading(true);
+      setError("");
+      setResult(null);
 
-    console.log("Resume selected:", selectedFile);
+      const formData = new FormData();
 
-    alert(
-      "Resume analysis functionality will be connected next. File selected: " +
-        selectedFile.name
-    );
+      formData.append("resume", selectedFile);
+
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:5000/api/resume/analyze",
+        {
+          method: "POST",
+          headers: {
+            Authorization: token
+              ? `Bearer ${token}`
+              : "",
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Failed to analyze resume."
+        );
+      }
+
+      setResult(data.data);
+    } catch (err) {
+      console.error(
+        "Resume analysis failed:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Something went wrong while analyzing your resume."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const analysis = result?.analysis;
 
   return (
     <main className="resume-analyzer-page">
@@ -102,158 +127,278 @@ const ResumeAnalyzer = () => {
           Back to Dashboard
         </Link>
 
-        <section className="resume-header">
+        <section className="resume-analyzer-header">
           <p className="resume-label">
-            AI-POWERED ANALYSIS
+            AI-POWERED CAREER INSIGHTS
           </p>
 
           <h1>Resume Analyzer</h1>
 
           <p>
-            Upload your resume and get AI-powered
-            insights to improve your skills,
-            experience, and job readiness.
+            Upload your resume and let MockMate analyze
+            your profile. Get AI-powered feedback to
+            improve your resume and interview readiness.
           </p>
         </section>
 
         <section className="resume-upload-card">
-          <div className="resume-card-heading">
-            <div className="resume-heading-icon">
-              <FileText size={27} />
-            </div>
-
+          <div className="resume-upload-header">
             <div>
-              <h2>Upload Your Resume</h2>
+              <p className="resume-section-label">
+                UPLOAD RESUME
+              </p>
+
+              <h2>Choose your resume</h2>
 
               <p>
-                Upload your resume in PDF or DOCX
-                format and MockMate will analyze it
-                for you.
+                Upload your latest resume in PDF or DOCX
+                format.
               </p>
             </div>
           </div>
 
-          <div
-            className="resume-drop-zone"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx"
-              onChange={handleFileChange}
-              className="resume-file-input"
-              id="resume-file"
-            />
+          {!selectedFile ? (
+            <label
+              className="resume-drop-zone"
+              htmlFor="resume-upload"
+            >
+              <input
+                id="resume-upload"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={handleFileChange}
+              />
 
-            {!selectedFile ? (
-              <>
-                <div className="resume-upload-icon">
-                  <Upload size={28} />
-                </div>
-
-                <h3>
-                  Drag and drop your resume here
-                </h3>
-
-                <p>or</p>
-
-                <label
-                  htmlFor="resume-file"
-                  className="resume-choose-button"
-                >
-                  Choose Resume
-                </label>
-
-                <span>
-                  Supported formats: PDF, DOCX
-                </span>
-              </>
-            ) : (
-              <div className="selected-file">
-                <div className="selected-file-info">
-                  <div className="selected-file-icon">
-                    <CheckCircle2 size={24} />
-                  </div>
-
-                  <div>
-                    <h3>{selectedFile.name}</h3>
-
-                    <p>
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      {" · "}
-                      Ready to analyze
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="remove-file-button"
-                  onClick={removeFile}
-                  aria-label="Remove selected file"
-                >
-                  <X size={19} />
-                </button>
+              <div className="resume-upload-icon">
+                <Upload size={26} />
               </div>
-            )}
-          </div>
+
+              <h3>Upload your resume</h3>
+
+              <p>
+                Click here to choose a PDF or DOCX file
+              </p>
+
+              <span>
+                Maximum file size: 5 MB
+              </span>
+            </label>
+          ) : (
+            <div className="resume-selected-file">
+              <div className="resume-file-icon">
+                <FileText size={24} />
+              </div>
+
+              <div className="resume-file-details">
+                <h3>{selectedFile.name}</h3>
+
+                <p>
+                  {(
+                    selectedFile.size /
+                    1024 /
+                    1024
+                  ).toFixed(2)}{" "}
+                  MB
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="resume-remove-button"
+                onClick={handleRemoveFile}
+                disabled={loading}
+                aria-label="Remove selected resume"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
 
           {error && (
-            <p className="resume-error">
-              {error}
-            </p>
+            <div className="resume-error-message">
+              <AlertCircle size={17} />
+
+              <span>{error}</span>
+            </div>
           )}
 
           <button
             type="button"
             className="resume-analyze-button"
-            onClick={handleAnalyze}
-            disabled={!selectedFile}
+            onClick={handleAnalyzeResume}
+            disabled={!selectedFile || loading}
           >
-            <FileText size={18} />
-            Analyze Resume
+            {loading ? (
+              <>
+                <LoaderCircle
+                  size={18}
+                  className="resume-loading-icon"
+                />
+                Analyzing Resume...
+              </>
+            ) : (
+              <>
+                <Sparkles size={18} />
+                Analyze Resume with AI
+              </>
+            )}
           </button>
         </section>
 
-        <section className="resume-features">
-          <div className="resume-feature-card">
-            <span>01</span>
+        {result && analysis && (
+          <section className="resume-result-card">
+            <div className="resume-result-header">
+              <div className="resume-result-icon">
+                <CheckCircle2 size={24} />
+              </div>
 
-            <h3>Resume Score</h3>
+              <div>
+                <p className="resume-section-label">
+                  AI ANALYSIS COMPLETE
+                </p>
 
-            <p>
-              Get an overall score based on the
-              quality and completeness of your
-              resume.
-            </p>
-          </div>
+                <h2>Your Resume Insights</h2>
 
-          <div className="resume-feature-card">
-            <span>02</span>
+                <p>
+                  Personalized feedback generated from
+                  your uploaded resume.
+                </p>
+              </div>
+            </div>
 
-            <h3>Skills Analysis</h3>
+            <div className="resume-file-result">
+              <span>Analyzed File</span>
 
-            <p>
-              Identify your strongest skills and
-              discover important skills that may be
-              missing.
-            </p>
-          </div>
+              <strong>
+                {result.fileName}
+              </strong>
+            </div>
 
-          <div className="resume-feature-card">
-            <span>03</span>
+            <div className="resume-score-grid">
+              <div className="resume-score-card">
+                <div className="resume-score-icon">
+                  <Target size={20} />
+                </div>
 
-            <h3>AI Suggestions</h3>
+                <span>Overall Score</span>
 
-            <p>
-              Receive actionable suggestions to
-              improve your resume for better job
-              opportunities.
-            </p>
-          </div>
-        </section>
+                <strong>
+                  {analysis.overallScore ?? 0}%
+                </strong>
+              </div>
+
+              <div className="resume-score-card">
+                <div className="resume-score-icon">
+                  <TrendingUp size={20} />
+                </div>
+
+                <span>Interview Readiness</span>
+
+                <strong>
+                  {analysis.interviewReadiness ??
+                    "Good"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="resume-analysis-section">
+              <div className="resume-analysis-heading">
+                <Sparkles size={19} />
+
+                <h3>Overall Summary</h3>
+              </div>
+
+              <p className="resume-summary-text">
+                {analysis.summary ||
+                  "Your resume has been successfully analyzed."}
+              </p>
+            </div>
+
+            <div className="resume-analysis-grid">
+              <div className="resume-analysis-section">
+                <div className="resume-analysis-heading">
+                  <CheckCircle2 size={19} />
+
+                  <h3>Strengths</h3>
+                </div>
+
+                {Array.isArray(
+                  analysis.strengths
+                ) &&
+                analysis.strengths.length > 0 ? (
+                  <ul className="resume-feedback-list">
+                    {analysis.strengths.map(
+                      (item, index) => (
+                        <li key={index}>
+                          {item}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="resume-empty-feedback">
+                    No specific strengths were returned.
+                  </p>
+                )}
+              </div>
+
+              <div className="resume-analysis-section">
+                <div className="resume-analysis-heading">
+                  <CircleAlert size={19} />
+
+                  <h3>Areas to Improve</h3>
+                </div>
+
+                {Array.isArray(
+                  analysis.improvements
+                ) &&
+                analysis.improvements.length > 0 ? (
+                  <ul className="resume-feedback-list">
+                    {analysis.improvements.map(
+                      (item, index) => (
+                        <li key={index}>
+                          {item}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="resume-empty-feedback">
+                    No specific improvements were returned.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="resume-analysis-section">
+              <div className="resume-analysis-heading">
+                <TrendingUp size={19} />
+
+                <h3>Recommended Next Steps</h3>
+              </div>
+
+              {Array.isArray(
+                analysis.recommendations
+              ) &&
+              analysis.recommendations.length > 0 ? (
+                <ul className="resume-feedback-list">
+                  {analysis.recommendations.map(
+                    (item, index) => (
+                      <li key={index}>
+                        {item}
+                      </li>
+                    )
+                  )}
+                </ul>
+              ) : (
+                <p className="resume-empty-feedback">
+                  Continue practicing interviews and
+                  improving the areas identified above.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

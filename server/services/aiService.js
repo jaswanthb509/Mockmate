@@ -1,11 +1,11 @@
-import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
+import "dotenv/config";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new Error(
-    "GEMINI_API_KEY is missing. Add it to your server/.env file."
+  console.warn(
+    "Warning: GEMINI_API_KEY is missing. AI features will not work until it is added to server/.env."
   );
 }
 
@@ -15,7 +15,17 @@ const ai = new GoogleGenAI({
 
 const MODEL_NAME = "gemini-2.5-flash";
 
+const sleep = (milliseconds) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+};
+
 const cleanAndParseJSON = (text) => {
+  if (!text || typeof text !== "string") {
+    throw new Error("AI returned an empty response.");
+  }
+
   const cleanedText = text
     .replace(/```json/gi, "")
     .replace(/```/g, "")
@@ -24,30 +34,33 @@ const cleanAndParseJSON = (text) => {
   return JSON.parse(cleanedText);
 };
 
-const sleep = (milliseconds) => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
-  });
-};
-
 const generateContentWithRetry = async (
   prompt,
   maxRetries = 3
 ) => {
   let lastError;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (
+    let attempt = 0;
+    attempt <= maxRetries;
+    attempt++
+  ) {
     try {
       const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
       });
 
       return response;
     } catch (error) {
       lastError = error;
 
-      const status = error.status;
+      const status =
+        error.status ||
+        error.response?.status;
 
       const shouldRetry =
         status === 429 ||
@@ -56,11 +69,15 @@ const generateContentWithRetry = async (
         status === 503 ||
         status === 504;
 
-      if (!shouldRetry || attempt === maxRetries) {
+      if (
+        !shouldRetry ||
+        attempt === maxRetries
+      ) {
         throw error;
       }
 
-      const delay = 2000 * Math.pow(2, attempt);
+      const delay =
+        2000 * Math.pow(2, attempt);
 
       console.log(
         `AI request failed with status ${status}. Retrying in ${
@@ -75,62 +92,124 @@ const generateContentWithRetry = async (
   throw lastError;
 };
 
-export const generateInterviewQuestions = async (data) => {
-  const prompt = `
-Generate exactly ${data.numberOfQuestions} interview questions.
+export const generateInterviewQuestions = async (
+  data
+) => {
+  if (!apiKey) {
+    throw new Error(
+      "AI service is not configured. GEMINI_API_KEY is missing."
+    );
+  }
 
-Role: ${data.role}
-Company: ${data.company || "Not specified"}
-Experience: ${data.experience}
+  const questionCount = Math.min(
+    Math.max(
+      Number(data.numberOfQuestions) || 10,
+      1
+    ),
+    20
+  );
+
+  const prompt = `
+You are MockMate AI, an expert interview coach.
+
+Generate exactly ${questionCount} high-quality mock interview questions.
+
+INTERVIEW CONFIGURATION:
+
+Job Role: ${data.role}
+Experience Level: ${data.experience}
 Difficulty: ${data.difficulty}
 Interview Type: ${data.interviewType}
-Technology Stack: ${data.techStack || "Not specified"}
-
-Generate questions appropriate for the specified role, experience level,
-difficulty, interview type, company, and technology stack.
-
-Return ONLY a valid JSON array in this format:
-
-[
-  {
-    "question": "Question text here"
+Technology Stack: ${
+    data.techStack || "Not specified"
   }
-]
+Target Company: ${
+    data.company || "General interview preparation"
+  }
 
-Do not include markdown.
-Do not include code fences.
-Do not include any explanation outside the JSON.
+QUESTION REQUIREMENTS:
+
+1. Generate exactly ${questionCount} questions.
+2. Make every question relevant to the selected role.
+3. Match the experience level and difficulty.
+4. Avoid duplicate questions.
+5. Generate realistic mock interview questions.
+6. Do not include answers or explanations.
+
+For Technical interviews:
+Focus on programming, computer science,
+frameworks, debugging, architecture,
+problem-solving, and relevant technologies.
+
+For HR interviews:
+Focus on communication, teamwork,
+leadership, conflict resolution,
+motivation, strengths, weaknesses,
+and workplace scenarios.
+
+For Mixed interviews:
+Generate a balanced combination
+of Technical and HR questions.
+
+Return ONLY valid JSON in exactly this format:
+
+{
+  "questions": [
+    {
+      "question": "Question text here"
+    }
+  ]
+}
 `;
 
   try {
-    const response = await generateContentWithRetry(prompt);
+    const response =
+      await generateContentWithRetry(prompt);
 
-    const questions = cleanAndParseJSON(response.text);
+    const parsedResponse =
+      cleanAndParseJSON(response.text);
 
-    if (!Array.isArray(questions)) {
+    const questions = Array.isArray(
+      parsedResponse.questions
+    )
+      ? parsedResponse.questions
+      : [];
+
+    if (questions.length === 0) {
       throw new Error(
-        "AI did not return an array of questions."
+        "No interview questions were generated."
       );
     }
 
-    if (questions.length !== data.numberOfQuestions) {
-      throw new Error(
-        `AI returned ${questions.length} questions instead of ${data.numberOfQuestions}.`
-      );
-    }
+    return questions
+      .filter((item) => {
+        if (typeof item === "string") {
+          return item.trim().length > 0;
+        }
 
-    return questions;
+        return (
+          item &&
+          typeof item.question === "string" &&
+          item.question.trim().length > 0
+        );
+      })
+      .map((item) => {
+        if (typeof item === "string") {
+          return {
+            question: item.trim(),
+          };
+        }
+
+        return {
+          question: item.question.trim(),
+        };
+      })
+      .slice(0, questionCount);
   } catch (error) {
     console.error(
       "Question Generation Error:",
       error.message
     );
-
-    if (error.status === 503) {
-      throw new Error(
-        "AI service is temporarily busy. Please try again in a moment."
-      );
-    }
 
     if (error.status === 429) {
       throw new Error(
@@ -138,8 +217,15 @@ Do not include any explanation outside the JSON.
       );
     }
 
+    if (error.status === 503) {
+      throw new Error(
+        "AI service is currently busy. Please try again in a moment."
+      );
+    }
+
     throw new Error(
-      "Failed to generate interview questions."
+      error.message ||
+        "Failed to generate interview questions."
     );
   }
 };
@@ -148,6 +234,12 @@ export const evaluateInterviewAnswers = async ({
   interviewConfig,
   answers,
 }) => {
+  if (!apiKey) {
+    throw new Error(
+      "AI service is not configured. GEMINI_API_KEY is missing."
+    );
+  }
+
   const formattedAnswers = answers
     .map(
       (item, index) => `
@@ -158,23 +250,29 @@ Candidate Answer:
 ${item.answer?.trim() || "No answer provided"}
 `
     )
-    .join("\n------------------------------\n");
+    .join(
+      "\n------------------------------\n"
+    );
 
   const prompt = `
-You are an expert technical interviewer.
+You are MockMate AI, an expert technical interviewer.
 
 Evaluate the following mock interview performance.
 
-Interview Details:
+INTERVIEW DETAILS:
 
 Role: ${interviewConfig.role}
-Company: ${interviewConfig.company || "Not specified"}
+Company: ${
+    interviewConfig.company || "Not specified"
+  }
 Experience: ${interviewConfig.experience}
 Difficulty: ${interviewConfig.difficulty}
 Interview Type: ${interviewConfig.interviewType}
-Technology Stack: ${interviewConfig.techStack || "Not specified"}
+Technology Stack: ${
+    interviewConfig.techStack || "Not specified"
+  }
 
-Candidate Responses:
+CANDIDATE RESPONSES:
 
 ${formattedAnswers}
 
@@ -186,13 +284,13 @@ Evaluate every answer based on:
 - Completeness
 - Communication quality
 
-Important rules:
+IMPORTANT RULES:
 
 - Give unanswered questions a score of 0.
 - overallScore must be between 0 and 100.
 - Each question score must be between 0 and 100.
 - Return feedback for exactly ${answers.length} questions.
-- Keep the feedback constructive and specific.
+- Keep feedback constructive and specific.
 - Do not give credit to unanswered questions.
 
 Return ONLY valid JSON in exactly this format:
@@ -217,20 +315,21 @@ Return ONLY valid JSON in exactly this format:
 }
 
 The questionFeedback array must contain exactly ${answers.length} items.
-
-Do not include markdown.
-Do not include code fences.
-Do not include any text outside the JSON.
 `;
 
   try {
-    const response = await generateContentWithRetry(prompt);
+    const response =
+      await generateContentWithRetry(prompt);
 
-    const evaluation = cleanAndParseJSON(response.text);
+    const evaluation =
+      cleanAndParseJSON(response.text);
 
     if (
-      typeof evaluation.overallScore !== "number" ||
-      !Array.isArray(evaluation.questionFeedback)
+      typeof evaluation.overallScore !==
+        "number" ||
+      !Array.isArray(
+        evaluation.questionFeedback
+      )
     ) {
       throw new Error(
         "Invalid AI evaluation format."
@@ -238,7 +337,8 @@ Do not include any text outside the JSON.
     }
 
     if (
-      evaluation.questionFeedback.length !== answers.length
+      evaluation.questionFeedback.length !==
+      answers.length
     ) {
       throw new Error(
         "AI returned an incorrect number of feedback items."
@@ -254,18 +354,22 @@ Do not include any text outside the JSON.
     );
 
     evaluation.questionFeedback =
-      evaluation.questionFeedback.map((item) => ({
-        score: Math.max(
-          0,
-          Math.min(
-            100,
-            Math.round(Number(item.score) || 0)
-          )
-        ),
-        feedback:
-          item.feedback ||
-          "No detailed feedback was provided.",
-      }));
+      evaluation.questionFeedback.map(
+        (item) => ({
+          score: Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                Number(item.score) || 0
+              )
+            )
+          ),
+          feedback:
+            item.feedback ||
+            "No detailed feedback was provided.",
+        })
+      );
 
     evaluation.strengths = Array.isArray(
       evaluation.strengths
@@ -290,11 +394,219 @@ Do not include any text outside the JSON.
       error.message
     );
 
-    if (error.status === 503) {
+    if (error.status === 429) {
       throw new Error(
-        "AI evaluation service is temporarily busy. Please try again in a moment."
+        "AI request limit reached. Please wait a moment and try again."
       );
     }
+
+    if (error.status === 503) {
+      throw new Error(
+        "AI evaluation service is currently busy. Please try again in a moment."
+      );
+    }
+
+    throw new Error(
+      error.message ||
+        "Failed to evaluate interview answers."
+    );
+  }
+};
+
+export const analyzeResumeWithAI = async (
+  resumeText
+) => {
+  if (!apiKey) {
+    throw new Error(
+      "AI service is not configured. GEMINI_API_KEY is missing."
+    );
+  }
+
+  if (
+    !resumeText ||
+    typeof resumeText !== "string" ||
+    resumeText.trim().length < 20
+  ) {
+    throw new Error(
+      "The resume does not contain enough readable text to analyze."
+    );
+  }
+
+  const prompt = `
+You are MockMate AI, an expert resume reviewer and career coach.
+
+Analyze the following resume and provide
+a detailed, constructive evaluation.
+
+RESUME CONTENT:
+
+${resumeText}
+
+Evaluate the resume based on:
+
+1. Overall resume quality
+2. Professional summary and career objective
+3. Technical and professional skills
+4. Education
+5. Projects and work experience
+6. Achievements and certifications
+7. Resume clarity and readability
+8. ATS keyword optimization
+9. Missing or weak areas
+10. Interview readiness
+
+SCORING RULES:
+
+- resumeScore must be an integer between 0 and 100.
+- Give realistic scores.
+- Do not give a perfect score unless the resume is exceptionally strong.
+- strengths must contain useful positive observations.
+- improvements must contain specific actionable improvements.
+- missingSkills should contain relevant skills that could strengthen the candidate's profile.
+- suggestions must contain practical steps the candidate can take.
+
+Return ONLY valid JSON in exactly this format:
+
+{
+  "resumeScore": 75,
+  "summary": "A concise overall analysis of the resume.",
+  "strengths": [
+    "Strength 1",
+    "Strength 2",
+    "Strength 3"
+  ],
+  "improvements": [
+    "Improvement 1",
+    "Improvement 2",
+    "Improvement 3"
+  ],
+  "missingSkills": [
+    "Skill 1",
+    "Skill 2"
+  ],
+  "suggestions": [
+    "Suggestion 1",
+    "Suggestion 2",
+    "Suggestion 3"
+  ],
+  "sectionScores": {
+    "profile": 70,
+    "skills": 75,
+    "experience": 65,
+    "projects": 80,
+    "education": 85,
+    "atsOptimization": 70
+  }
+}
+`;
+
+  try {
+    const response =
+      await generateContentWithRetry(prompt);
+
+    const analysis =
+      cleanAndParseJSON(response.text);
+
+    if (
+      typeof analysis.resumeScore !==
+      "number"
+    ) {
+      throw new Error(
+        "AI returned an invalid resume score."
+      );
+    }
+
+    analysis.resumeScore = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(analysis.resumeScore)
+      )
+    );
+
+    analysis.summary =
+      typeof analysis.summary === "string"
+        ? analysis.summary
+        : "Your resume has been analyzed successfully.";
+
+    analysis.strengths = Array.isArray(
+      analysis.strengths
+    )
+      ? analysis.strengths.filter(
+          (item) =>
+            typeof item === "string" &&
+            item.trim().length > 0
+        )
+      : [];
+
+    analysis.improvements = Array.isArray(
+      analysis.improvements
+    )
+      ? analysis.improvements.filter(
+          (item) =>
+            typeof item === "string" &&
+            item.trim().length > 0
+        )
+      : [];
+
+    analysis.missingSkills = Array.isArray(
+      analysis.missingSkills
+    )
+      ? analysis.missingSkills.filter(
+          (item) =>
+            typeof item === "string" &&
+            item.trim().length > 0
+        )
+      : [];
+
+    analysis.suggestions = Array.isArray(
+      analysis.suggestions
+    )
+      ? analysis.suggestions.filter(
+          (item) =>
+            typeof item === "string" &&
+            item.trim().length > 0
+        )
+      : [];
+
+    const defaultSectionScores = {
+      profile: 0,
+      skills: 0,
+      experience: 0,
+      projects: 0,
+      education: 0,
+      atsOptimization: 0,
+    };
+
+    const receivedSectionScores =
+      analysis.sectionScores || {};
+
+    analysis.sectionScores = {};
+
+    Object.keys(
+      defaultSectionScores
+    ).forEach((key) => {
+      const score = Number(
+        receivedSectionScores[key]
+      );
+
+      analysis.sectionScores[key] = Math.max(
+        0,
+        Math.min(
+          100,
+          Number.isFinite(score)
+            ? Math.round(score)
+            : 0
+        )
+      );
+    });
+
+    return analysis;
+  } catch (error) {
+    console.error(
+      "Resume AI Analysis Error:",
+      error.message
+    );
 
     if (error.status === 429) {
       throw new Error(
@@ -302,8 +614,15 @@ Do not include any text outside the JSON.
       );
     }
 
+    if (error.status === 503) {
+      throw new Error(
+        "AI service is currently busy. Please try again in a moment."
+      );
+    }
+
     throw new Error(
-      "Failed to evaluate interview answers."
+      error.message ||
+        "Failed to analyze the resume."
     );
   }
 };
