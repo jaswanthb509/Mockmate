@@ -6,6 +6,7 @@ import {
   BarChart3,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./PerformanceOverview.css";
 
 const getLastSevenDays = () => {
@@ -38,10 +39,18 @@ const getTrendData = (scores) => {
     };
   }
 
-  const midpoint = Math.ceil(scores.length / 2);
+  const midpoint = Math.ceil(
+    scores.length / 2
+  );
 
-  const previousScores = scores.slice(0, midpoint);
-  const recentScores = scores.slice(midpoint);
+  const previousScores = scores.slice(
+    0,
+    midpoint
+  );
+
+  const recentScores = scores.slice(
+    midpoint
+  );
 
   if (recentScores.length === 0) {
     return {
@@ -88,37 +97,35 @@ const getTrendData = (scores) => {
 
 const PerformanceOverview = () => {
   const [chartData, setChartData] = useState([]);
-  const [averageScore, setAverageScore] = useState(0);
+  const [averageScore, setAverageScore] =
+    useState(0);
+
   const [trend, setTrend] = useState({
     value: "0%",
     type: "neutral",
   });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPerformance = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-          "http://localhost:5000/api/interview/history",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const response = await API.get(
+          "/interview/history"
         );
 
-        const result = await response.json();
+        const result = response.data;
 
-        if (!response.ok || !result.success) {
+        if (!result?.success) {
           throw new Error(
-            result.message ||
+            result?.message ||
               "Failed to fetch performance data."
           );
         }
 
-        const interviews = Array.isArray(result.data)
+        const interviews = Array.isArray(
+          result.data
+        )
           ? result.data
           : [];
 
@@ -126,15 +133,17 @@ const PerformanceOverview = () => {
           .filter(
             (interview) =>
               interview.evaluation &&
-              typeof interview.evaluation.overallScore ===
-                "number" &&
+              typeof interview.evaluation
+                .overallScore === "number" &&
               interview.createdAt
           )
           .map((interview) => ({
             score: Math.round(
               interview.evaluation.overallScore
             ),
-            createdAt: new Date(interview.createdAt),
+            createdAt: new Date(
+              interview.createdAt
+            ),
           }))
           .sort(
             (a, b) =>
@@ -142,7 +151,9 @@ const PerformanceOverview = () => {
               b.createdAt.getTime()
           );
 
-        if (evaluatedInterviews.length === 0) {
+        if (
+          evaluatedInterviews.length === 0
+        ) {
           setChartData(
             getLastSevenDays().map((day) => ({
               ...day,
@@ -169,15 +180,18 @@ const PerformanceOverview = () => {
           ) / evaluatedInterviews.length
         );
 
-        const lastSevenDays = getLastSevenDays();
+        const lastSevenDays =
+          getLastSevenDays();
 
-        const performanceData = lastSevenDays.map(
-          (day) => {
+        const performanceData =
+          lastSevenDays.map((day) => {
             const interviewsForDay =
               evaluatedInterviews.filter(
                 (interview) => {
                   const interviewDate =
-                    new Date(interview.createdAt);
+                    new Date(
+                      interview.createdAt
+                    );
 
                   interviewDate.setHours(
                     0,
@@ -189,7 +203,8 @@ const PerformanceOverview = () => {
                   return (
                     interviewDate
                       .toISOString()
-                      .split("T")[0] === day.key
+                      .split("T")[0] ===
+                    day.key
                   );
                 }
               );
@@ -199,9 +214,11 @@ const PerformanceOverview = () => {
                 ? Math.round(
                     interviewsForDay.reduce(
                       (total, interview) =>
-                        total + interview.score,
+                        total +
+                        interview.score,
                       0
-                    ) / interviewsForDay.length
+                    ) /
+                      interviewsForDay.length
                   )
                 : 0;
 
@@ -210,18 +227,19 @@ const PerformanceOverview = () => {
               score: dayScore,
               count: interviewsForDay.length,
             };
-          }
-        );
+          });
 
         const recentScores =
           evaluatedInterviews
             .slice(-6)
             .map(
-              (interview) => interview.score
+              (interview) =>
+                interview.score
             );
 
         setChartData(performanceData);
         setAverageScore(overallAverage);
+
         setTrend(
           getTrendData(recentScores)
         );
@@ -277,7 +295,9 @@ const PerformanceOverview = () => {
               YOUR PROGRESS
             </p>
 
-            <h2>Performance Overview</h2>
+            <h2>
+              Performance Overview
+            </h2>
           </div>
         </div>
 
@@ -287,7 +307,9 @@ const PerformanceOverview = () => {
           <TrendIcon size={15} />
 
           <span>
-            {loading ? "..." : trend.value}
+            {loading
+              ? "..."
+              : trend.value}
           </span>
         </div>
       </div>
@@ -300,7 +322,9 @@ const PerformanceOverview = () => {
               : `${averageScore}%`}
           </strong>
 
-          <span>Average score</span>
+          <span>
+            Average score
+          </span>
         </div>
 
         <p>
@@ -342,7 +366,9 @@ const PerformanceOverview = () => {
                   title={
                     day.count > 0
                       ? `${day.score}% average from ${day.count} interview${
-                          day.count > 1 ? "s" : ""
+                          day.count > 1
+                            ? "s"
+                            : ""
                         }`
                       : "No evaluated interviews"
                   }

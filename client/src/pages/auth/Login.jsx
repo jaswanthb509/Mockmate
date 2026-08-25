@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./Login.css";
 
 const Login = () => {
@@ -39,29 +40,27 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+      const response = await API.post(
+        "/auth/login",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
+          email: email.trim(),
+          password,
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok || !data.success) {
+      const authData =
+        data?.data || data;
+
+      if (!data?.success && !authData?.token) {
         throw new Error(
-          data.message || "Unable to log in."
+          data?.message ||
+            "Unable to log in."
         );
       }
 
-      if (!data.token) {
+      if (!authData?.token) {
         throw new Error(
           "Login succeeded but no authentication token was received."
         );
@@ -69,27 +68,32 @@ const Login = () => {
 
       localStorage.setItem(
         "token",
-        data.token
+        authData.token
       );
 
-      if (data.user) {
+      if (authData.user) {
         localStorage.setItem(
           "user",
-          JSON.stringify(data.user)
+          JSON.stringify(authData.user)
         );
       }
 
       const redirectPath =
-        location.state?.from || "/dashboard";
+        location.state?.from ||
+        "/dashboard";
 
       navigate(redirectPath, {
         replace: true,
       });
     } catch (error) {
-      console.error("Login Error:", error);
+      console.error(
+        "Login Error:",
+        error
+      );
 
       setError(
-        error.message ||
+        error.response?.data?.message ||
+          error.message ||
           "Something went wrong. Please try again."
       );
     } finally {
@@ -128,6 +132,7 @@ const Login = () => {
           <div className="login-features">
             <div>
               <Sparkles size={15} />
+
               <span>
                 Personalized interview questions
               </span>
@@ -135,6 +140,7 @@ const Login = () => {
 
             <div>
               <Sparkles size={15} />
+
               <span>
                 Instant AI-powered feedback
               </span>
@@ -142,6 +148,7 @@ const Login = () => {
 
             <div>
               <Sparkles size={15} />
+
               <span>
                 Track your interview progress
               </span>
@@ -156,7 +163,9 @@ const Login = () => {
             WELCOME BACK
           </p>
 
-          <h2>Continue your journey</h2>
+          <h2>
+            Continue your journey
+          </h2>
 
           <p className="login-subtitle">
             Log in to practice, improve, and track
@@ -236,6 +245,7 @@ const Login = () => {
               ) : (
                 <>
                   Continue to MockMate
+
                   <ArrowRight size={18} />
                 </>
               )}
@@ -243,7 +253,9 @@ const Login = () => {
           </form>
 
           <div className="login-divider">
-            <span>NEW TO MOCKMATE?</span>
+            <span>
+              NEW TO MOCKMATE?
+            </span>
           </div>
 
           <Link

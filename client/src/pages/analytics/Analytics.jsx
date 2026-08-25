@@ -9,11 +9,18 @@ import {
   FileText,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./Analytics.css";
 
 const getScoreClass = (score) => {
-  if (score >= 80) return "analytics-score-excellent";
-  if (score >= 60) return "analytics-score-good";
+  if (score >= 80) {
+    return "analytics-score-excellent";
+  }
+
+  if (score >= 60) {
+    return "analytics-score-good";
+  }
+
   return "analytics-score-needs-work";
 };
 
@@ -24,30 +31,24 @@ const Analytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-          "http://localhost:5000/api/interview/history",
-          {
-            headers: {
-              Authorization: token
-                ? `Bearer ${token}`
-                : "",
-            },
-          }
+        const response = await API.get(
+          "/interview/history"
         );
 
-        const result = await response.json();
+        const result = response.data;
 
-        if (!response.ok || !result.success) {
+        if (
+          !result?.success &&
+          !Array.isArray(result?.data)
+        ) {
           throw new Error(
-            result.message ||
+            result?.message ||
               "Failed to fetch analytics."
           );
         }
 
         setInterviews(
-          Array.isArray(result.data)
+          Array.isArray(result?.data)
             ? result.data
             : []
         );
@@ -71,8 +72,8 @@ const Analytics = () => {
       .filter(
         (interview) =>
           interview.evaluation &&
-          typeof interview.evaluation.overallScore ===
-            "number"
+          typeof interview.evaluation
+            .overallScore === "number"
       )
       .sort(
         (a, b) =>
@@ -101,7 +102,8 @@ const Analytics = () => {
 
     const average = Math.round(
       scores.reduce(
-        (sum, score) => sum + score,
+        (sum, score) =>
+          sum + score,
         0
       ) / total
     );
@@ -110,9 +112,13 @@ const Analytics = () => {
 
     let trend = 0;
 
-    if (scores.length >= 2 && scores[0] > 0) {
+    if (
+      scores.length >= 2 &&
+      scores[0] > 0
+    ) {
       trend = Math.round(
-        ((scores[scores.length - 1] - scores[0]) /
+        ((scores[scores.length - 1] -
+          scores[0]) /
           scores[0]) *
           100
       );
@@ -123,7 +129,8 @@ const Analytics = () => {
       average,
       best,
       trend,
-      recentScores: evaluatedInterviews.slice(-7),
+      recentScores:
+        evaluatedInterviews.slice(-7),
     };
   }, [interviews]);
 
@@ -144,7 +151,9 @@ const Analytics = () => {
               PERFORMANCE INSIGHTS
             </p>
 
-            <h1>Interview Analytics</h1>
+            <h1>
+              Interview Analytics
+            </h1>
 
             <p className="analytics-description">
               Track your progress and understand
@@ -164,7 +173,9 @@ const Analytics = () => {
               <FileText size={28} />
             </div>
 
-            <h2>No analytics yet</h2>
+            <h2>
+              No analytics yet
+            </h2>
 
             <p>
               Complete an interview to start
@@ -187,8 +198,13 @@ const Analytics = () => {
                 </div>
 
                 <div>
-                  <span>Evaluated Interviews</span>
-                  <strong>{analytics.total}</strong>
+                  <span>
+                    Evaluated Interviews
+                  </span>
+
+                  <strong>
+                    {analytics.total}
+                  </strong>
                 </div>
               </div>
 
@@ -198,7 +214,10 @@ const Analytics = () => {
                 </div>
 
                 <div>
-                  <span>Average Score</span>
+                  <span>
+                    Average Score
+                  </span>
+
                   <strong>
                     {analytics.average}%
                   </strong>
@@ -211,7 +230,10 @@ const Analytics = () => {
                 </div>
 
                 <div>
-                  <span>Best Score</span>
+                  <span>
+                    Best Score
+                  </span>
+
                   <strong>
                     {analytics.best}%
                   </strong>
@@ -224,7 +246,10 @@ const Analytics = () => {
                 </div>
 
                 <div>
-                  <span>Overall Trend</span>
+                  <span>
+                    Overall Trend
+                  </span>
+
                   <strong>
                     {analytics.trend >= 0
                       ? `+${analytics.trend}%`
@@ -248,10 +273,7 @@ const Analytics = () => {
 
                 <span>
                   Last{" "}
-                  {
-                    analytics.recentScores
-                      .length
-                  }{" "}
+                  {analytics.recentScores.length}{" "}
                   interviews
                 </span>
               </div>

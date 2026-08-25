@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   Mic,
   Target,
@@ -6,6 +7,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./StatsCards.css";
 
 const StatsCards = () => {
@@ -16,77 +18,102 @@ const StatsCards = () => {
     thisWeek: 0,
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-          "http://localhost:5000/api/interview/history",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const response = await API.get(
+          "/interview/history"
         );
 
-        const result = await response.json();
+        const result = response.data;
 
-        if (!response.ok || !result.success) {
+        if (!result?.success) {
           throw new Error(
-            result.message || "Failed to fetch interview statistics."
+            result?.message ||
+              "Failed to fetch interview statistics."
           );
         }
 
-        const interviews = Array.isArray(result.data)
+        const interviews = Array.isArray(
+          result.data
+        )
           ? result.data
           : [];
 
-        const totalInterviews = interviews.length;
+        const totalInterviews =
+          interviews.length;
 
-        const evaluatedInterviews = interviews.filter(
-          (interview) =>
-            interview.evaluation &&
-            typeof interview.evaluation.overallScore === "number"
-        );
+        const evaluatedInterviews =
+          interviews.filter(
+            (interview) =>
+              interview.evaluation &&
+              typeof interview.evaluation
+                .overallScore === "number"
+          );
 
         const averageScore =
           evaluatedInterviews.length > 0
             ? Math.round(
                 evaluatedInterviews.reduce(
                   (total, interview) =>
-                    total + interview.evaluation.overallScore,
+                    total +
+                    interview.evaluation
+                      .overallScore,
                   0
-                ) / evaluatedInterviews.length
+                ) /
+                  evaluatedInterviews.length
               )
             : 0;
 
         const bestScore =
           evaluatedInterviews.length > 0
-            ? Math.max(
-                ...evaluatedInterviews.map(
-                  (interview) =>
-                    interview.evaluation.overallScore
+            ? Math.round(
+                Math.max(
+                  ...evaluatedInterviews.map(
+                    (interview) =>
+                      interview.evaluation
+                        .overallScore
+                  )
                 )
               )
             : 0;
 
         const now = new Date();
 
-        const startOfWeek = new Date(now);
+        const startOfWeek =
+          new Date(now);
 
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        startOfWeek.setDate(
-          now.getDate() - now.getDay()
+        startOfWeek.setHours(
+          0,
+          0,
+          0,
+          0
         );
 
-        const thisWeek = interviews.filter(
-          (interview) =>
-            new Date(interview.createdAt) >= startOfWeek
-        ).length;
+        startOfWeek.setDate(
+          now.getDate() -
+            now.getDay()
+        );
+
+        const thisWeek =
+          interviews.filter(
+            (interview) => {
+              if (
+                !interview.createdAt
+              ) {
+                return false;
+              }
+
+              return (
+                new Date(
+                  interview.createdAt
+                ) >= startOfWeek
+              );
+            }
+          ).length;
 
         setStats({
           totalInterviews,
@@ -99,6 +126,13 @@ const StatsCards = () => {
           "Failed to fetch dashboard statistics:",
           error
         );
+
+        setStats({
+          totalInterviews: 0,
+          averageScore: 0,
+          bestScore: 0,
+          thisWeek: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -140,9 +174,15 @@ const StatsCards = () => {
         const Icon = stat.icon;
 
         return (
-          <div className="stats-card" key={stat.id}>
+          <div
+            className="stats-card"
+            key={stat.id}
+          >
             <div className="stats-card-icon">
-              <Icon size={26} strokeWidth={2} />
+              <Icon
+                size={26}
+                strokeWidth={2}
+              />
             </div>
 
             <div className="stats-card-info">
@@ -151,7 +191,9 @@ const StatsCards = () => {
               </p>
 
               <h2 className="stats-card-value">
-                {loading ? "..." : stat.value}
+                {loading
+                  ? "..."
+                  : stat.value}
               </h2>
             </div>
           </div>
