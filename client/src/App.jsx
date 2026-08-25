@@ -17,7 +17,7 @@ import InterviewDetails from "./pages/history/InterviewDetails";
 import Analytics from "./pages/analytics/Analytics";
 
 import ResumeAnalyzer from "./pages/resumeanalyzer/ResumeAnalyzer";
-import CareerProfile from "./pages/careerprofile/CareerProfile";
+import CareerProfile from "./pages/CareerProfile/CareerProfile";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
