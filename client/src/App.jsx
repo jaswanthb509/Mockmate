@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 
-// Pages
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -13,7 +12,9 @@ import Result from "./pages/interview/Result";
 import History from "./pages/history/History";
 import InterviewDetails from "./pages/history/InterviewDetails";
 
-// Protected Route
+import Analytics from "./pages/analytics/Analytics";
+import ResumeAnalyzer from "./pages/resumeanalyzer/ResumeAnalyzer";
+
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const Protected = ({ children }) => {
@@ -23,12 +24,10 @@ const Protected = ({ children }) => {
 function App() {
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Routes */}
       <Route
         path="/dashboard"
         element={
@@ -79,6 +78,24 @@ function App() {
         element={
           <Protected>
             <InterviewDetails />
+          </Protected>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <Protected>
+            <Analytics />
+          </Protected>
+        }
+      />
+
+      <Route
+        path="/resume"
+        element={
+          <Protected>
+            <ResumeAnalyzer />
           </Protected>
         }
       />
