@@ -1,21 +1,29 @@
-import User from "../models/User.js";
 import bcrypt from "bcryptjs";
-import generateToken from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+
+const generateToken = (id) => {
+  return jwt.sign(
+    { id },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+};
 
 export const registerUser = async (req, res) => {
   try {
-    console.log("Register request body:", req.body);
-
     const { name, email, password } = req.body;
 
-    if (!name?.trim() || !email?.trim() || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please fill all fields",
+        message: "Please provide name, email and password.",
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({
       email: normalizedEmail,
@@ -24,7 +32,7 @@ export const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message: "An account with this email already exists.",
       });
     }
 
@@ -40,14 +48,13 @@ export const registerUser = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      data: {
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
+      message: "Account created successfully.",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -55,25 +62,23 @@ export const registerUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Internal Server Error",
+      message: "Unable to create account. Please try again.",
     });
   }
 };
 
 export const loginUser = async (req, res) => {
   try {
-    console.log("Login request body:", req.body);
-
     const { email, password } = req.body;
 
-    if (!email?.trim() || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Please enter email and password.",
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await User.findOne({
       email: normalizedEmail,
@@ -82,19 +87,19 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
       });
     }
 
-    const isPasswordMatch = await bcrypt.compare(
+    const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password
     );
 
-    if (!isPasswordMatch) {
+    if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
       });
     }
 
@@ -102,14 +107,13 @@ export const loginUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Login successful",
-      data: {
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
+      message: "Login successful.",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -117,23 +121,30 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Internal Server Error",
+      message: "Unable to log in. Please try again.",
     });
   }
 };
 
 export const getCurrentUser = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authorized.",
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      data: req.user,
+      user: req.user,
     });
   } catch (error) {
-    console.error("Get User Error:", error);
+    console.error("Get Current User Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Unable to fetch user information.",
     });
   }
 };

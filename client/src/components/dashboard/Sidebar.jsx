@@ -4,8 +4,8 @@ import {
   PlayCircle,
   History,
   BarChart3,
-  User,
-  Settings,
+  UserRound,
+  FileText,
   LogOut,
   Sparkles,
   ChevronRight,
@@ -20,6 +20,9 @@ const Sidebar = () => {
     localStorage.removeItem("token");
     navigate("/login", { replace: true });
   };
+
+  const getNavLinkClass = ({ isActive }) =>
+    isActive ? "sidebar-link active" : "sidebar-link";
 
   return (
     <aside className="mockmate-sidebar">
@@ -49,9 +52,7 @@ const Sidebar = () => {
 
           <NavLink
             to="/dashboard"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
+            className={getNavLinkClass}
           >
             <LayoutDashboard size={19} />
             <span>Overview</span>
@@ -59,9 +60,7 @@ const Sidebar = () => {
 
           <NavLink
             to="/history"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
+            className={getNavLinkClass}
           >
             <History size={19} />
             <span>Interview History</span>
@@ -69,36 +68,30 @@ const Sidebar = () => {
 
           <NavLink
             to="/analytics"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
+            className={getNavLinkClass}
           >
             <BarChart3 size={19} />
             <span>Analytics</span>
           </NavLink>
 
+          <NavLink
+            to="/resume"
+            className={getNavLinkClass}
+          >
+            <FileText size={19} />
+            <span>Resume Analyzer</span>
+          </NavLink>
+
           <p className="nav-section-title sidebar-second-section">
-            ACCOUNT
+            CAREER
           </p>
 
           <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
+            to="/career-profile"
+            className={getNavLinkClass}
           >
-            <User size={19} />
-            <span>Profile</span>
-          </NavLink>
-
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
-            <Settings size={19} />
-            <span>Settings</span>
+            <UserRound size={19} />
+            <span>Career Profile</span>
           </NavLink>
         </nav>
       </div>
@@ -110,7 +103,7 @@ const Sidebar = () => {
           </div>
 
           <div className="upgrade-content">
-            <strong>Unlock more with Pro</strong>
+            <strong>Practice Today with</strong>
             <span>Advanced AI insights</span>
           </div>
         </div>

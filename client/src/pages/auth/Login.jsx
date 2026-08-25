@@ -1,41 +1,96 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+
+import {
+  Mail,
+  Lock,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
+
 import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     setError("");
 
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail || !password) {
-      setError("Please enter your email and password.");
+    if (!email.trim() || !password.trim()) {
+      setError(
+        "Please enter both email and password."
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      await login(trimmedEmail, password);
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        }
+      );
 
-      navigate("/dashboard", { replace: true });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to log in."
+        );
+      }
+
+      if (!data.token) {
+        throw new Error(
+          "Login succeeded but no authentication token was received."
+        );
+      }
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      const redirectPath =
+        location.state?.from || "/dashboard";
+
+      navigate(redirectPath, {
+        replace: true,
+      });
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Login Error:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Login failed. Please check your credentials."
+        error.message ||
+          "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
@@ -43,142 +98,172 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
-      <section className="login-showcase">
-        <div className="showcase-content">
-          <Link to="/" className="back-home">
-            ← Back to home
-          </Link>
+    <main className="login-page">
+      <section className="login-left-panel">
+        <div className="login-brand">
+          <span>Mock</span>
+          <strong>Mate.</strong>
+        </div>
 
-          <div className="showcase-brand">
-            Mock<span>Mate.</span>
-          </div>
+        <div className="login-hero-content">
+          <p className="login-platform-label">
+            AN AI-POWERED INTERVIEW PRACTICE PLATFORM
+          </p>
 
-          <div className="showcase-text">
-            <span className="showcase-label">
-              AN AI-POWERED INTERVIEW PRACTICE PLATFORM
-            </span>
+          <h1>
+            Practice smarter.
+            <br />
+            Interview with
+            <br />
+            confidence.
+          </h1>
 
-            <h1>
-              Practice smarter.
-              <br />
-              Interview with confidence.
-            </h1>
+          <p className="login-description">
+            Prepare for your dream job with
+            personalized AI interviews, instant
+            feedback, and detailed performance
+            insights.
+          </p>
 
-            <p>
-              Prepare for your dream job with personalized AI interviews,
-              instant feedback, and detailed performance insights.
-            </p>
-          </div>
-
-          <div className="showcase-features">
+          <div className="login-features">
             <div>
-              <span>✦</span>
-              Personalized interview questions
+              <Sparkles size={15} />
+              <span>
+                Personalized interview questions
+              </span>
             </div>
 
             <div>
-              <span>✦</span>
-              Instant AI-powered feedback
+              <Sparkles size={15} />
+              <span>
+                Instant AI-powered feedback
+              </span>
             </div>
 
             <div>
-              <span>✦</span>
-              Track your interview progress
+              <Sparkles size={15} />
+              <span>
+                Track your interview progress
+              </span>
             </div>
           </div>
         </div>
-
-        <div className="showcase-glow glow-one"></div>
-        <div className="showcase-glow glow-two"></div>
       </section>
 
-      <section className="login-panel">
-        <div className="login-card">
-          <div className="login-header">
-            <span className="login-tag">WELCOME BACK</span>
+      <section className="login-right-panel">
+        <div className="login-form-container">
+          <p className="login-welcome-label">
+            WELCOME BACK
+          </p>
 
-            <h2>Continue your journey</h2>
+          <h2>Continue your journey</h2>
 
-            <p>
-              Log in to practice, improve, and track your interview progress.
-            </p>
-          </div>
+          <p className="login-subtitle">
+            Log in to practice, improve, and track
+            your interview progress.
+          </p>
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            {error && (
-              <div className="login-error">
-                {error}
+          <form
+            className="login-form"
+            onSubmit={handleSubmit}
+          >
+            <div className="login-field">
+              <label htmlFor="email">
+                Email address
+              </label>
+
+              <div className="login-input-wrapper">
+                <Mail size={18} />
+
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(event) =>
+                    setEmail(event.target.value)
+                  }
+                  disabled={loading}
+                  autoComplete="email"
+                />
               </div>
-            )}
-
-            <div className="input-group">
-              <label htmlFor="email">Email address:</label>
-
-              <input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                disabled={loading}
-              />
             </div>
 
-            <div className="input-group">
-              <div className="password-label-row">
-                <label htmlFor="password">Password:</label>
+            <div className="login-field">
+              <div className="login-password-label">
+                <label htmlFor="password">
+                  Password
+                </label>
 
-                <Link to="#" className="forgot-link">
+                <Link
+                  to="/forgot-password"
+                  className="forgot-password-link"
+                >
                   Forgot password?
                 </Link>
               </div>
 
-              <input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                disabled={loading}
-              />
+              <div className="login-input-wrapper">
+                <Lock size={18} />
+
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(event.target.value)
+                  }
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
 
+            {error && (
+              <div className="login-error-message">
+                {error}
+              </div>
+            )}
+
             <button
-              className="login-btn"
               type="submit"
+              className="login-submit-button"
               disabled={loading}
             >
               {loading ? (
-                "Logging in..."
+                "Signing in..."
               ) : (
                 <>
                   Continue to MockMate
-                  <span>→</span>
+                  <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
 
           <div className="login-divider">
-            <span></span>
-            <p>NEW TO MOCKMATE?</p>
-            <span></span>
+            <span>NEW TO MOCKMATE?</span>
           </div>
 
-          <Link to="/register" className="create-account-btn">
+          <Link
+            to="/register"
+            className="create-account-button"
+          >
             Create your account
           </Link>
 
-          <p className="login-footer">
-            Practice interviews. Learn from feedback. Get better every day.
+          <p className="login-footer-text">
+            Practice interviews. Learn from feedback.
+            Get better every day.
           </p>
-          <p className="login-footer">-By Jaswanth</p>
+
+          <p className="login-author">
+            -By Jaswanth
+          </p>
         </div>
       </section>
-    </div>
+    </main>
   );
 };
 

@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+
 import Dashboard from "./pages/Dashboard";
 
 import SetupInterview from "./pages/interview/SetupInterview";
@@ -13,7 +15,9 @@ import History from "./pages/history/History";
 import InterviewDetails from "./pages/history/InterviewDetails";
 
 import Analytics from "./pages/analytics/Analytics";
+
 import ResumeAnalyzer from "./pages/resumeanalyzer/ResumeAnalyzer";
+import CareerProfile from "./pages/careerprofile/CareerProfile";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -25,8 +29,21 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
+      <Route
+        path="/register"
+        element={<Register />}
+      />
+
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
+      />
 
       <Route
         path="/dashboard"
@@ -98,6 +115,20 @@ function App() {
             <ResumeAnalyzer />
           </Protected>
         }
+      />
+
+      <Route
+        path="/career-profile"
+        element={
+          <Protected>
+            <CareerProfile />
+          </Protected>
+        }
+      />
+
+      <Route
+        path="*"
+        element={<Home />}
       />
     </Routes>
   );

@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
 dotenv.config();
 
@@ -24,9 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-  console.log(
-    `${req.method} ${req.originalUrl}`
-  );
+  console.log(`${req.method} ${req.originalUrl}`);
 
   next();
 });
@@ -39,6 +38,8 @@ app.use("/api/interview", interviewRoutes);
 
 app.use("/api/resume", resumeRoutes);
 
+app.use("/api/profile", profileRoutes);
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -47,10 +48,7 @@ app.get("/", (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(
-    "Server Error:",
-    err.message
-  );
+  console.error("Server Error:", err.message);
 
   if (err.name === "MulterError") {
     return res.status(400).json({
@@ -83,7 +81,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
+  console.log(`Server running on port ${PORT}`);
 });
