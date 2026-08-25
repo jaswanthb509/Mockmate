@@ -90,34 +90,34 @@
 
   flex-shrink: 0;
 
-  overflow: hidden;
-
   border:
     1px solid rgba(167, 139, 250, 0.12);
   border-radius: 13px;
 
   background:
     rgba(124, 58, 237, 0.12);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.company-logo {
-  width: 26px;
-  height: 26px;
+.interview-row:hover .interview-company-icon {
+  transform: translateY(-2px);
 
-  display: block;
+  background:
+    rgba(124, 58, 237, 0.17);
 
-  object-fit: contain;
-
-  border-radius: 6px;
+  border-color:
+    rgba(167, 139, 250, 0.22);
 }
 
-.company-fallback-icon {
-  width: 100%;
-  height: 100%;
+.company-brand-icon {
+  font-size: 22px;
+}
 
-  align-items: center;
-  justify-content: center;
-
+.default-company-icon {
   color: #a78bfa;
 }
 
@@ -349,6 +349,20 @@
 
   font-size: 12px;
   font-weight: 700;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.recent-start-button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.company-brand-icon {
+  color: #a78bfa;
+  flex-shrink: 0;
 }
 
 @media (max-width: 850px) {
@@ -413,11 +427,12 @@
   .interview-company-icon {
     width: 42px;
     height: 42px;
+
+    border-radius: 12px;
   }
 
-  .company-logo {
-    width: 23px;
-    height: 23px;
+  .company-brand-icon {
+    font-size: 20px;
   }
 
   .interview-details h3 {

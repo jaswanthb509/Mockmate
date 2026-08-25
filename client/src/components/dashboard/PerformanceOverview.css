@@ -30,18 +30,20 @@
 }
 
 .performance-icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 12px;
+  border-radius: 13px;
 
   color: #a78bfa;
   background: rgba(124, 58, 237, 0.14);
   border: 1px solid rgba(167, 139, 250, 0.12);
+
+  flex-shrink: 0;
 }
 
 .section-label {
@@ -51,7 +53,6 @@
 
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
@@ -60,12 +61,12 @@
 
   color: #f8fafc;
 
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
 }
 
 .performance-trend {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 
@@ -73,12 +74,28 @@
 
   border-radius: 999px;
 
-  color: #a78bfa;
-  background: rgba(124, 58, 237, 0.1);
-  border: 1px solid rgba(167, 139, 250, 0.1);
-
   font-size: 12px;
   font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+.performance-trend.positive {
+  color: #a78bfa;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.16);
+}
+
+.performance-trend.negative {
+  color: #fda4af;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.14);
+}
+
+.performance-trend.neutral {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .performance-summary {
@@ -90,7 +107,7 @@
   margin-top: 28px;
 }
 
-.performance-summary > div {
+.performance-score-info {
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -100,6 +117,7 @@
   color: #ffffff;
 
   font-size: 38px;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -110,19 +128,21 @@
 }
 
 .performance-summary p {
+  max-width: 250px;
   margin: 0;
 
   color: #64748b;
 
   font-size: 12px;
+  line-height: 1.5;
   text-align: right;
 }
 
 .performance-chart {
-  height: 220px;
+  height: 230px;
 
   margin-top: 26px;
-  padding: 18px 4px 0;
+  padding: 20px 4px 0;
 
   display: flex;
   align-items: flex-end;
@@ -136,6 +156,7 @@
   height: 100%;
 
   flex: 1;
+  min-width: 0;
 
   display: flex;
   flex-direction: column;
@@ -146,7 +167,7 @@
 
 .chart-bar-wrapper {
   width: 100%;
-  height: 170px;
+  height: 178px;
 
   display: flex;
   align-items: flex-end;
@@ -157,39 +178,82 @@
   background:
     linear-gradient(
       to top,
-      rgba(124, 58, 237, 0.04),
+      rgba(124, 58, 237, 0.05),
       transparent
     );
 }
 
 .chart-bar {
+  position: relative;
+
   width: 100%;
-  max-width: 34px;
-  min-height: 14px;
+  max-width: 36px;
+  min-height: 4px;
 
-  border-radius: 9px 9px 3px 3px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 
-  background: linear-gradient(
-    to top,
-    #6d28d9,
-    #8b5cf6,
-    #c4b5fd
-  );
+  border-radius: 10px 10px 4px 4px;
 
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.18);
+  background:
+    linear-gradient(
+      to top,
+      #6d28d9,
+      #8b5cf6,
+      #c4b5fd
+    );
+
+  box-shadow:
+    0 8px 20px
+    rgba(124, 58, 237, 0.18);
+
+  cursor: pointer;
 
   transition:
-    height 0.3s ease,
+    height 0.35s ease,
     transform 0.2s ease,
     opacity 0.2s ease;
 }
 
 .chart-bar:hover {
-  transform: translateY(-3px);
-  opacity: 0.9;
+  transform: translateY(-4px);
+  opacity: 0.92;
 }
 
-.chart-column span {
+.chart-bar-empty {
+  background:
+    rgba(148, 163, 184, 0.18);
+
+  box-shadow: none;
+
+  cursor: default;
+}
+
+.chart-bar-empty:hover {
+  transform: none;
+  opacity: 1;
+}
+
+.chart-score {
+  position: absolute;
+  top: -22px;
+
+  color: #c4b5fd;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  opacity: 0;
+
+  transition: opacity 0.2s ease;
+}
+
+.chart-bar:hover .chart-score {
+  opacity: 1;
+}
+
+.chart-day {
   color: #64748b;
 
   font-size: 10px;
@@ -220,34 +284,31 @@
   }
 
   .performance-summary p {
+    max-width: none;
     text-align: left;
   }
 
   .performance-chart {
-    height: 190px;
+    height: 205px;
   }
 
   .chart-bar-wrapper {
-    height: 140px;
-  }
-
-  .chart-column span {
-    font-size: 9px;
+    height: 150px;
   }
 }
 
 @media (max-width: 480px) {
   .performance-title-row {
-    gap: 9px;
+    gap: 10px;
   }
 
   .performance-icon {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
   }
 
   .performance-header h2 {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .performance-summary strong {
@@ -256,5 +317,13 @@
 
   .performance-chart {
     gap: 7px;
+  }
+
+  .chart-score {
+    display: none;
+  }
+
+  .chart-day {
+    font-size: 9px;
   }
 }
