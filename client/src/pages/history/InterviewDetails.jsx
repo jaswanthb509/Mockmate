@@ -13,7 +13,6 @@ import {
   AlertCircle,
   Sparkles,
   Building2,
-  RefreshCw,
 } from "lucide-react";
 
 import API from "../../services/api";
@@ -34,7 +33,6 @@ const InterviewDetails = () => {
         setError("");
 
         const response = await API.get(`/interview/${id}`);
-
         const interviewData = response.data?.data;
 
         if (!interviewData) {
@@ -43,10 +41,7 @@ const InterviewDetails = () => {
 
         setInterview(interviewData);
       } catch (error) {
-        console.error(
-          "Failed to fetch interview details:",
-          error
-        );
+        console.error("Failed to fetch interview details:", error);
 
         setError(
           error.response?.data?.message ||
@@ -84,15 +79,40 @@ const InterviewDetails = () => {
     });
   };
 
+  const normalizeFeedback = (feedback) => {
+    if (!feedback) {
+      return [];
+    }
+
+    const feedbackArray = Array.isArray(feedback)
+      ? feedback
+      : [feedback];
+
+    return feedbackArray
+      .flatMap((item) => {
+        if (typeof item !== "string") {
+          return [];
+        }
+
+        return item
+          .split(/\n|•|\u2022|(?=^\s*[-*]\s+)/gm)
+          .map((text) =>
+            text
+              .replace(/\*\*/g, "")
+              .replace(/^[-*]\s*/, "")
+              .replace(/\s+/g, " ")
+              .trim()
+          )
+          .filter(Boolean);
+      })
+      .filter((item, index, array) => array.indexOf(item) === index);
+  };
+
   if (loading) {
     return (
       <div className="details-page">
         <div className="details-loading">
-          <Loader2
-            size={36}
-            className="details-spinner"
-          />
-
+          <Loader2 size={36} className="details-spinner" />
           <p>Loading your interview results...</p>
         </div>
       </div>
@@ -107,9 +127,7 @@ const InterviewDetails = () => {
 
           <h2>Unable to Load Interview</h2>
 
-          <p>
-            {error || "Interview not found."}
-          </p>
+          <p>{error || "Interview not found."}</p>
 
           <button
             type="button"
@@ -146,21 +164,25 @@ const InterviewDetails = () => {
       evaluation.evaluatedAt ||
       typeof evaluation.overallScore === "number" ||
       evaluation.summary ||
-      evaluation.strengths?.length > 0 ||
-      evaluation.improvements?.length > 0 ||
-      evaluation.questionFeedback?.length > 0
+      Array.isArray(evaluation.strengths) ||
+      Array.isArray(evaluation.improvements) ||
+      Array.isArray(evaluation.questionFeedback)
     );
 
   const overallScore =
     hasEvaluation &&
     typeof evaluation.overallScore === "number"
       ? evaluation.overallScore
-      : interview.completionScore || 0;
+      : Number(interview.completionScore || 0);
 
-  const questionFeedbackList =
-    Array.isArray(evaluation?.questionFeedback)
-      ? evaluation.questionFeedback
-      : [];
+  const strengths = normalizeFeedback(evaluation?.strengths);
+  const improvements = normalizeFeedback(evaluation?.improvements);
+
+  const questionFeedbackList = Array.isArray(
+    evaluation?.questionFeedback
+  )
+    ? evaluation.questionFeedback
+    : [];
 
   return (
     <div className="details-page">
@@ -178,7 +200,7 @@ const InterviewDetails = () => {
           <button
             type="button"
             className="details-new-interview-btn"
-            onClick={() => navigate("/setup")}
+            onClick={() => navigate("/setup-interview")}
           >
             <Sparkles size={17} />
             New Interview
@@ -186,7 +208,7 @@ const InterviewDetails = () => {
         </div>
 
         <section className="details-header">
-          <div>
+          <div className="details-header-info">
             <p className="details-label">
               AI INTERVIEW REPORT
             </p>
@@ -236,9 +258,8 @@ const InterviewDetails = () => {
 
             <div>
               <span>Questions Answered</span>
-
               <strong>
-                {answeredCount} / {interview.totalQuestions || 0}
+                {answeredCount} / {interview.totalQuestions || answers.length}
               </strong>
             </div>
           </div>
@@ -248,10 +269,7 @@ const InterviewDetails = () => {
 
             <div>
               <span>Interview Date</span>
-
-              <strong>
-                {formatDate(interview.createdAt)}
-              </strong>
+              <strong>{formatDate(interview.createdAt)}</strong>
             </div>
           </div>
 
@@ -260,10 +278,7 @@ const InterviewDetails = () => {
 
             <div>
               <span>Interview Time</span>
-
-              <strong>
-                {formatTime(interview.createdAt)}
-              </strong>
+              <strong>{formatTime(interview.createdAt)}</strong>
             </div>
           </div>
         </section>
@@ -271,50 +286,43 @@ const InterviewDetails = () => {
         {interview.techStack && (
           <section className="details-tech">
             <span>Technology Stack</span>
-
             <strong>{interview.techStack}</strong>
           </section>
         )}
 
         {hasEvaluation ? (
           <>
-            <section className="ai-summary-section">
-              <div className="section-title">
+            <section className="details-ai-summary-section">
+              <div className="details-section-title">
                 <Brain size={22} />
 
                 <div>
                   <p>AI EVALUATION</p>
-
                   <h2>Your Performance Summary</h2>
                 </div>
               </div>
 
-              <div className="ai-summary-card">
+              <div className="details-ai-summary-card">
                 {evaluation.summary ||
                   "Your interview has been evaluated successfully."}
               </div>
             </section>
 
-            <section className="feedback-grid">
-              <div className="feedback-card strengths-card">
-                <div className="feedback-card-title">
+            <section className="details-feedback-grid">
+              <div className="details-feedback-card details-strengths-card">
+                <div className="details-feedback-card-title">
                   <TrendingUp size={21} />
-
                   <h3>Strengths</h3>
                 </div>
 
-                {Array.isArray(evaluation.strengths) &&
-                evaluation.strengths.length > 0 ? (
+                {strengths.length > 0 ? (
                   <ul>
-                    {evaluation.strengths.map(
-                      (strength, index) => (
-                        <li key={index}>
-                          <CheckCircle2 size={16} />
-
-                          <span>{strength}</span>
-                        </li>
-                      )
-                    )}
+                    {strengths.map((strength, index) => (
+                      <li key={index}>
+                        <CheckCircle2 size={16} />
+                        <span>{strength}</span>
+                      </li>
+                    ))}
                   </ul>
                 ) : (
                   <p className="empty-feedback">
@@ -323,25 +331,20 @@ const InterviewDetails = () => {
                 )}
               </div>
 
-              <div className="feedback-card improvements-card">
-                <div className="feedback-card-title">
+              <div className="details-feedback-card details-improvements-card">
+                <div className="details-feedback-card-title">
                   <AlertCircle size={21} />
-
                   <h3>Areas for Improvement</h3>
                 </div>
 
-                {Array.isArray(evaluation.improvements) &&
-                evaluation.improvements.length > 0 ? (
+                {improvements.length > 0 ? (
                   <ul>
-                    {evaluation.improvements.map(
-                      (improvement, index) => (
-                        <li key={index}>
-                          <AlertCircle size={16} />
-
-                          <span>{improvement}</span>
-                        </li>
-                      )
-                    )}
+                    {improvements.map((improvement, index) => (
+                      <li key={index}>
+                        <AlertCircle size={16} />
+                        <span>{improvement}</span>
+                      </li>
+                    ))}
                   </ul>
                 ) : (
                   <p className="empty-feedback">
@@ -352,20 +355,19 @@ const InterviewDetails = () => {
             </section>
           </>
         ) : (
-          <section className="ai-summary-section">
-            <div className="section-title">
+          <section className="details-ai-summary-section">
+            <div className="details-section-title">
               <Brain size={22} />
 
               <div>
                 <p>AI EVALUATION</p>
-
                 <h2>Evaluation Not Available</h2>
               </div>
             </div>
 
-            <div className="ai-summary-card">
-              This interview does not currently have a saved AI
-              evaluation report.
+            <div className="details-ai-summary-card">
+              This interview does not currently have a saved AI evaluation
+              report.
             </div>
           </section>
         )}
@@ -374,13 +376,10 @@ const InterviewDetails = () => {
           <div className="answers-section-header">
             <div>
               <p>DETAILED REVIEW</p>
-
               <h2>Questions & Your Answers</h2>
             </div>
 
-            <span>
-              {answeredCount} answered
-            </span>
+            <span>{answeredCount} answered</span>
           </div>
 
           {answers.length === 0 ? (
@@ -401,17 +400,14 @@ const InterviewDetails = () => {
               return (
                 <div
                   className="details-answer-card"
-                  key={index}
+                  key={item._id || index}
                 >
                   <div className="details-question-header">
-                    <span>
-                      Question {index + 1}
-                    </span>
+                    <span>Question {index + 1}</span>
 
                     <div className="question-status-group">
                       {questionFeedback &&
-                        typeof questionFeedback.score ===
-                          "number" && (
+                        typeof questionFeedback.score === "number" && (
                           <span className="question-score">
                             {questionFeedback.score}/100
                           </span>
@@ -444,10 +440,9 @@ const InterviewDetails = () => {
                   </div>
 
                   {hasEvaluation && questionFeedback && (
-                    <div className="question-feedback">
-                      <div className="question-feedback-header">
+                    <div className="details-question-feedback">
+                      <div className="details-question-feedback-header">
                         <Brain size={18} />
-
                         <span>AI Feedback</span>
                       </div>
 

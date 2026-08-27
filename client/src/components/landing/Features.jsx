@@ -1,71 +1,93 @@
 import "./Features.css";
 import {
-  Upload,
-  Clock,
-  FileText,
-  ShieldCheck,
-  Sparkles,
-  Users,
+  BrainCircuit,
+  MessageSquareText,
+  Building2,
+  Mic,
+  BarChart3,
+  FileUp,
+  ArrowUpRight,
 } from "lucide-react";
 
 const features = [
   {
-    icon: <Upload size={35} />,
-    title: "Resume Based Interviews",
+    icon: <BrainCircuit size={28} />,
+    title: "AI-Generated Questions",
     description:
-      "Upload your resume and practice questions tailored to your skills and experience.",
+      "Practice personalized technical, behavioral, and coding questions tailored to your role, skills, and experience.",
+    tag: "Personalized",
   },
   {
-    icon: <Clock size={35} />,
-    title: "Timed Interviews",
+    icon: <MessageSquareText size={28} />,
+    title: "Instant AI Feedback",
     description:
-      "Experience realistic interview sessions with time limits similar to real interviews.",
+      "Get detailed feedback on your answers, including technical accuracy, relevance, completeness, and communication.",
+    tag: "Smart Evaluation",
   },
   {
-    icon: <FileText size={35} />,
-    title: "Detailed Reports",
+    icon: <Building2 size={28} />,
+    title: "Company-Specific Practice",
     description:
-      "Get a detailed report showing your performance after every interview.",
+      "Prepare for your target company with interview questions tailored to specific roles, technologies, and difficulty levels.",
+    tag: "Targeted Prep",
   },
   {
-    icon: <ShieldCheck size={35} />,
-    title: "Secure Authentication",
+    icon: <Mic size={28} />,
+    title: "Voice-Based Interviews",
     description:
-      "Your account and interview history are protected with secure authentication.",
+      "Practice answering interview questions naturally using speech-to-text for a more realistic interview experience.",
+    tag: "Voice Practice",
   },
   {
-    icon: <Sparkles size={35} />,
-    title: "AI Recommendations",
+    icon: <BarChart3 size={28} />,
+    title: "Performance Analytics",
     description:
-      "Receive personalized suggestions to improve your interview performance.",
+      "Track your scores, identify weak areas, and understand your progress with personalized improvement insights.",
+    tag: "Track Progress",
   },
   {
-    icon: <Users size={35} />,
-    title: "Multiple Interview Roles",
+    icon: <FileUp size={28} />,
+    title: "Resume-Based Interviews",
     description:
-      "Practice Frontend, Backend, Full Stack, HR and other interview types.",
+      "Upload your resume and receive interview questions based on your skills, projects, and professional experience.",
+    tag: "Resume Aware",
   },
 ];
 
 const Features = () => {
   return (
     <section className="features" id="features">
-      <h2>Powerful Features</h2>
+      <div className="features-header">
+        <span className="section-label">POWERFUL FEATURES</span>
 
-      <p className="features-subtitle">
-        Everything you need to prepare for your next interview.
-      </p>
+        <h2>
+          Everything You Need to
+          <span> Interview Smarter.</span>
+        </h2>
+
+        <p className="features-subtitle">
+          From personalized questions to AI-powered feedback, MockMate gives
+          you the tools to prepare with confidence.
+        </p>
+      </div>
 
       <div className="features-grid">
         {features.map((feature, index) => (
           <div className="feature-card" key={index}>
-            <div className="feature-icon">
-              {feature.icon}
+            <div className="feature-top">
+              <div className="feature-icon">{feature.icon}</div>
+
+              <span className="feature-tag">{feature.tag}</span>
             </div>
 
             <h3>{feature.title}</h3>
 
             <p>{feature.description}</p>
+
+            <div className="feature-footer">
+              <span>Learn more</span>
+              <ArrowUpRight size={18} />
+            </div>
           </div>
         ))}
       </div>

@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Trophy,
-  CheckCircle2,
-  Circle,
-  RotateCcw,
-  Home,
-  Loader2,
   Brain,
-  ThumbsUp,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  RotateCcw,
+  LayoutDashboard,
   Lightbulb,
+  TrendingUp,
+  Clock3,
 } from "lucide-react";
-
 import API from "../../services/api";
 import "./Result.css";
 
@@ -19,86 +19,134 @@ const Result = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
+  const hasProcessed = useRef(false);
 
-  const [evaluating, setEvaluating] = useState(false);
-  const [evaluationError, setEvaluationError] = useState("");
-  const [evaluation, setEvaluation] = useState(null);
-
-  const hasProcessedInterview = useRef(false);
-
-  const interviewConfig = location.state?.interviewConfig;
+  const interviewConfig = location.state?.interviewConfig || {};
 
   const answers = Array.isArray(location.state?.answers)
     ? location.state.answers
     : [];
 
-  const totalQuestions =
-    Number(location.state?.totalQuestions) || answers.length;
+  const questions = Array.isArray(location.state?.questions)
+    ? location.state.questions
+    : [];
 
-  const answeredCount = answers.filter((item) => {
-    return (
+  const totalQuestions =
+    Number(location.state?.totalQuestions) ||
+    questions.length ||
+    answers.length;
+
+  const normalizedAnswers =
+    answers.length > 0
+      ? answers.map((item, index) => ({
+          question:
+            item?.question ||
+            questions[index] ||
+            `Question ${index + 1}`,
+          answer:
+            typeof item?.answer === "string"
+              ? item.answer
+              : "",
+        }))
+      : questions.map((question, index) => ({
+          question:
+            typeof question === "string"
+              ? question
+              : question?.question || `Question ${index + 1}`,
+          answer: "",
+        }));
+
+  const answeredCount = normalizedAnswers.filter(
+    (item) =>
       typeof item.answer === "string" &&
       item.answer.trim().length > 0
-    );
-  }).length;
+  ).length;
 
   const completionScore =
     totalQuestions > 0
-      ? Math.round((answeredCount / totalQuestions) * 100)
+      ? Math.round(
+          (answeredCount / totalQuestions) * 100
+        )
       : 0;
+
+  const [saving, setSaving] = useState(false);
+  const [savedInterview, setSavedInterview] =
+    useState(null);
+
+  const [evaluating, setEvaluating] =
+    useState(false);
+
+  const [evaluation, setEvaluation] =
+    useState(null);
+
+  const [saveError, setSaveError] =
+    useState("");
+
+  const [evaluationError, setEvaluationError] =
+    useState("");
 
   useEffect(() => {
     if (
-      hasProcessedInterview.current ||
-      !interviewConfig ||
-      answers.length === 0
+      hasProcessed.current ||
+      !location.state ||
+      !interviewConfig.role ||
+      normalizedAnswers.length === 0
     ) {
       return;
     }
 
-    const processInterview = async () => {
-      hasProcessedInterview.current = true;
+    hasProcessed.current = true;
 
+    const processInterview = async () => {
       let interviewId = null;
 
       try {
         setSaving(true);
         setSaveError("");
 
-        const saveResponse = await API.post("/interview/save", {
-          role: interviewConfig.role,
-          company: interviewConfig.company || "",
-          experience: interviewConfig.experience,
-          difficulty: interviewConfig.difficulty,
-          interviewType: interviewConfig.interviewType,
-          techStack: interviewConfig.techStack || "",
-          totalQuestions,
-          answeredQuestions: answeredCount,
-          completionScore,
-          answers,
-        });
+        const saveResponse = await API.post(
+          "/interview/save",
+          {
+            role: interviewConfig.role,
+            company:
+              interviewConfig.company || "",
+            experience:
+              interviewConfig.experience || "",
+            difficulty:
+              interviewConfig.difficulty || "",
+            interviewType:
+              interviewConfig.interviewType || "",
+            techStack:
+              interviewConfig.techStack || "",
+            totalQuestions,
+            answeredQuestions: answeredCount,
+            completionScore,
+            answers: normalizedAnswers,
+          }
+        );
 
-        const savedInterview =
+        const savedData =
           saveResponse.data?.data ||
           saveResponse.data?.interview ||
           saveResponse.data;
 
         interviewId =
-          savedInterview?._id ||
-          savedInterview?.id ||
-          savedInterview?.interviewId;
+          savedData?._id ||
+          savedData?.id ||
+          savedData?.interviewId;
 
         if (!interviewId) {
           throw new Error(
-            "Interview was saved, but the interview ID was not returned."
+            "Interview was saved, but no interview ID was returned."
           );
         }
 
-        setSaving(false);
+        setSavedInterview(savedData);
       } catch (error) {
-        console.error("Interview save error:", error);
+        console.error(
+          "Interview save error:",
+          error
+        );
 
         setSaveError(
           error.response?.data?.message ||
@@ -106,34 +154,45 @@ const Result = () => {
             "Could not save the interview."
         );
 
-        setSaving(false);
         return;
+      } finally {
+        setSaving(false);
       }
 
       try {
         setEvaluating(true);
         setEvaluationError("");
 
-        const evaluationResponse = await API.post(
-          "/interview/evaluate",
-          {
-            interviewId,
-          }
-        );
+        const evaluationResponse =
+          await API.post(
+            "/interview/evaluate",
+            {
+              interviewId,
+            }
+          );
 
         const evaluationData =
           evaluationResponse.data?.data ||
           evaluationResponse.data?.evaluation ||
           evaluationResponse.data;
 
+        if (!evaluationData) {
+          throw new Error(
+            "AI evaluation completed, but no evaluation data was returned."
+          );
+        }
+
         setEvaluation(evaluationData);
       } catch (error) {
-        console.error("AI evaluation error:", error);
+        console.error(
+          "AI evaluation error:",
+          error
+        );
 
         setEvaluationError(
           error.response?.data?.message ||
             error.message ||
-            "AI evaluation could not be completed."
+            "AI evaluation could not be completed. Your interview was still saved successfully."
         );
       } finally {
         setEvaluating(false);
@@ -143,9 +202,13 @@ const Result = () => {
     processInterview();
   }, []);
 
-  if (!location.state || !interviewConfig || answers.length === 0) {
+  if (
+    !location.state ||
+    !interviewConfig.role ||
+    normalizedAnswers.length === 0
+  ) {
     return (
-      <div className="result-page">
+      <main className="result-page">
         <div className="result-container empty-result">
           <div className="result-icon">
             <Trophy size={38} />
@@ -154,18 +217,21 @@ const Result = () => {
           <h1>No Interview Results Found</h1>
 
           <p>
-            Please complete an interview to view your results.
+            Please complete an interview to view your
+            results.
           </p>
 
           <button
             type="button"
             className="result-primary-btn"
-            onClick={() => navigate("/setup")}
+            onClick={() =>
+              navigate("/setup-interview")
+            }
           >
             Start New Interview
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -177,7 +243,9 @@ const Result = () => {
       : null;
 
   const displayScore =
-    aiScore !== null ? aiScore : completionScore;
+    aiScore !== null
+      ? aiScore
+      : completionScore;
 
   const overallFeedback =
     evaluation?.overallFeedback ||
@@ -185,7 +253,9 @@ const Result = () => {
     evaluation?.feedback ||
     "";
 
-  const strengths = Array.isArray(evaluation?.strengths)
+  const strengths = Array.isArray(
+    evaluation?.strengths
+  )
     ? evaluation.strengths
     : [];
 
@@ -193,20 +263,44 @@ const Result = () => {
     evaluation?.improvements
   )
     ? evaluation.improvements
-    : Array.isArray(evaluation?.areasToImprove)
+    : Array.isArray(
+        evaluation?.areasToImprove
+      )
     ? evaluation.areasToImprove
     : [];
 
-  const questionFeedback = Array.isArray(
+  const questionFeedbackList = Array.isArray(
     evaluation?.questionFeedback
   )
     ? evaluation.questionFeedback
-    : Array.isArray(evaluation?.questionEvaluations)
+    : Array.isArray(
+        evaluation?.questionEvaluations
+      )
     ? evaluation.questionEvaluations
     : [];
 
-  const handleTryAgain = () => {
-    navigate("/setup");
+  const getQuestionFeedback = (
+    question,
+    index
+  ) => {
+    if (
+      questionFeedbackList.length === 0
+    ) {
+      return null;
+    }
+
+    return (
+      questionFeedbackList[index] ||
+      questionFeedbackList.find(
+        (item) =>
+          item?.question === question
+      ) ||
+      null
+    );
+  };
+
+  const handlePracticeAgain = () => {
+    navigate("/setup-interview");
   };
 
   const handleDashboard = () => {
@@ -214,7 +308,7 @@ const Result = () => {
   };
 
   return (
-    <div className="result-page">
+    <main className="result-page">
       <div className="result-container">
         <header className="result-header">
           <div className="result-icon">
@@ -228,10 +322,14 @@ const Result = () => {
           <h1>Interview Completed!</h1>
 
           <p className="result-description">
-            {evaluating
+            {saving
+              ? "Saving your completed interview..."
+              : evaluating
               ? "Your answers are being analyzed by AI. Please wait a moment."
               : evaluation
               ? "Your AI evaluation report is ready and has been saved to your interview history."
+              : savedInterview
+              ? "Your interview was completed and saved successfully."
               : "Your interview has been completed successfully."}
           </p>
         </header>
@@ -245,37 +343,52 @@ const Result = () => {
               : "Your Completion Score"}
           </p>
 
-          <div className="score-circle">
+          <div
+            className={`score-circle ${
+              evaluating
+                ? "score-circle-evaluating"
+                : ""
+            }`}
+          >
             {evaluating ? (
               <Loader2
-                size={52}
+                size={48}
                 className="score-loader"
               />
             ) : (
-              <span>{displayScore}%</span>
+              <span>
+                {displayScore}%
+              </span>
             )}
           </div>
 
           <h2>
-            {answeredCount} / {totalQuestions} Questions Answered
+            {answeredCount} / {totalQuestions}{" "}
+            Questions Answered
           </h2>
 
           {saving && (
-            <p className="save-status saving-status">
+            <div className="save-status saving-status">
               <Loader2
                 size={16}
                 className="save-loader"
               />
-              Saving interview...
-            </p>
+              <span>
+                Saving interview...
+              </span>
+            </div>
           )}
 
-          {!saving && !saveError && (
-            <p className="save-status">
-              <CheckCircle2 size={16} />
-              Interview saved successfully
-            </p>
-          )}
+          {!saving &&
+            savedInterview &&
+            !saveError && (
+              <div className="save-status">
+                <CheckCircle2 size={16} />
+                <span>
+                  Interview saved successfully
+                </span>
+              </div>
+            )}
 
           {saveError && (
             <p className="evaluation-error">
@@ -289,15 +402,18 @@ const Result = () => {
                 size={17}
                 className="small-loader"
               />
-              <span>Generating your AI evaluation...</span>
+              <span>
+                Generating your AI evaluation...
+              </span>
             </div>
           )}
 
-          {!evaluating && evaluationError && (
-            <p className="evaluation-error">
-              AI evaluation is currently unavailable. Your interview was still saved successfully.
-            </p>
-          )}
+          {!evaluating &&
+            evaluationError && (
+              <p className="evaluation-error">
+                {evaluationError}
+              </p>
+            )}
         </section>
 
         {evaluating && (
@@ -310,9 +426,10 @@ const Result = () => {
               </h2>
 
               <p>
-                Evaluating your answers for correctness,
-                clarity, technical knowledge, and overall
-                interview performance.
+                Evaluating correctness,
+                relevance, clarity,
+                completeness, and
+                communication quality.
               </p>
             </div>
           </section>
@@ -321,62 +438,76 @@ const Result = () => {
         {!evaluating && evaluation && (
           <section className="ai-feedback-section">
             <div className="ai-section-title">
-              <Brain size={28} />
+              <Brain size={30} />
 
               <div>
                 <p>AI Evaluation</p>
-
-                <h2>Your AI Interview Report</h2>
+                <h2>
+                  Your AI Interview Report
+                </h2>
               </div>
             </div>
 
             <div className="ai-score-highlight">
               <span>Overall Score</span>
-
-              <strong>{displayScore}%</strong>
+              <strong>
+                {displayScore}%
+              </strong>
             </div>
 
-            {overallFeedback && (
-              <div className="ai-summary-card">
-                <h3>Overall Feedback</h3>
+            <div className="result-feedback-summary">
+              <h3>Overall Feedback</h3>
 
-                <p>{overallFeedback}</p>
-              </div>
-            )}
+              <p>
+                {overallFeedback ||
+                  "Your interview has been evaluated successfully."}
+              </p>
+            </div>
 
-            <div className="feedback-grid">
-              <div className="feedback-card strengths-card">
-                <div className="feedback-card-title">
-                  <ThumbsUp size={21} />
+            <div className="result-feedback-grid">
+              <div className="result-feedback-card result-strengths-card">
+                <div className="result-feedback-card-title">
+                  <TrendingUp size={22} />
 
                   <h3>Strengths</h3>
                 </div>
 
                 {strengths.length > 0 ? (
                   <ul>
-                    {strengths.map((strength, index) => (
-                      <li key={index}>{strength}</li>
-                    ))}
+                    {strengths.map(
+                      (
+                        strength,
+                        index
+                      ) => (
+                        <li key={index}>
+                          {strength}
+                        </li>
+                      )
+                    )}
                   </ul>
                 ) : (
                   <p>
-                    No specific strengths were provided in
-                    the evaluation.
+                    No specific strengths were generated.
                   </p>
                 )}
               </div>
 
-              <div className="feedback-card improvements-card">
-                <div className="feedback-card-title">
-                  <Lightbulb size={21} />
+              <div className="result-feedback-card result-improvements-card">
+                <div className="result-feedback-card-title">
+                  <Lightbulb size={22} />
 
-                  <h3>Areas to Improve</h3>
+                  <h3>
+                    Areas to Improve
+                  </h3>
                 </div>
 
                 {improvements.length > 0 ? (
                   <ul>
                     {improvements.map(
-                      (improvement, index) => (
+                      (
+                        improvement,
+                        index
+                      ) => (
                         <li key={index}>
                           {improvement}
                         </li>
@@ -385,8 +516,7 @@ const Result = () => {
                   </ul>
                 ) : (
                   <p>
-                    No specific improvement suggestions were
-                    provided.
+                    No specific improvement suggestions were generated.
                   </p>
                 )}
               </div>
@@ -395,93 +525,130 @@ const Result = () => {
         )}
 
         <section className="answers-review">
-          <h2>Questions & Your Answers</h2>
+          <h2>
+            Questions & Your Answers
+          </h2>
 
-          {answers.map((item, index) => {
-            const answerText =
-              typeof item.answer === "string"
-                ? item.answer.trim()
-                : "";
+          {normalizedAnswers.map(
+            (item, index) => {
+              const answerText =
+                typeof item.answer === "string"
+                  ? item.answer.trim()
+                  : "";
 
-            const isAnswered = answerText.length > 0;
+              const isAnswered =
+                answerText.length > 0;
 
-            const feedback =
-              questionFeedback[index] ||
-              questionFeedback.find(
-                (itemFeedback) =>
-                  itemFeedback?.question === item.question
-              );
+              const feedback =
+                getQuestionFeedback(
+                  item.question,
+                  index
+                );
 
-            const feedbackScore =
-              typeof feedback?.score === "number"
-                ? feedback.score
-                : null;
+              const feedbackScore =
+                typeof feedback?.score ===
+                "number"
+                  ? feedback.score
+                  : null;
 
-            const feedbackText =
-              feedback?.feedback ||
-              feedback?.comment ||
-              feedback?.evaluation ||
-              "";
+              const feedbackText =
+                feedback?.feedback ||
+                feedback?.comment ||
+                feedback?.evaluation ||
+                feedback?.message ||
+                "";
 
-            return (
-              <article
-                className="answer-review-card"
-                key={index}
-              >
-                <div className="answer-review-header">
-                  <div className="question-status">
-                    {isAnswered ? (
-                      <CheckCircle2
-                        size={20}
-                        className="answered-icon"
-                      />
-                    ) : (
-                      <Circle
-                        size={20}
-                        className="unanswered-icon"
-                      />
+              return (
+                <article
+                  className="answer-review-card"
+                  key={index}
+                >
+                  <div className="answer-review-header">
+                    <div className="question-status">
+                      <span className="question-number">
+                        Question {index + 1}
+                      </span>
+
+                      {isAnswered ? (
+                        <CheckCircle2
+                          size={20}
+                          className="answered-icon"
+                        />
+                      ) : (
+                        <AlertCircle
+                          size={20}
+                          className="unanswered-icon"
+                        />
+                      )}
+                    </div>
+
+                    {feedbackScore !== null && (
+                      <span className="question-score">
+                        {feedbackScore}/100
+                      </span>
                     )}
-
-                    <span className="question-number">
-                      Question {index + 1}
-                    </span>
                   </div>
 
-                  {feedbackScore !== null && (
-                    <span className="question-score">
-                      Score: {feedbackScore}%
-                    </span>
-                  )}
-                </div>
+                  <h3>
+                    {item.question}
+                  </h3>
 
-                <h3>{item.question}</h3>
-
-                <div className="answer-box">
-                  {isAnswered
-                    ? answerText
-                    : "No answer was provided."}
-                </div>
-
-                {feedbackText && (
-                  <div className="question-feedback">
-                    <h4>AI Feedback</h4>
-
-                    <p>{feedbackText}</p>
+                  <div className="answer-label">
+                    Your Answer
                   </div>
-                )}
-              </article>
-            );
-          })}
+
+                  <div className="answer-box">
+                    {isAnswered
+                      ? answerText
+                      : "No answer was provided for this question."}
+                  </div>
+
+                  {!evaluating &&
+                    evaluation && (
+                      <div className="question-feedback">
+                        <div className="question-feedback-header">
+                          <Brain size={18} />
+                          <span>
+                            AI Feedback
+                          </span>
+                        </div>
+
+                        <p>
+                          {feedbackText ||
+                            "No specific feedback was generated for this answer."}
+                        </p>
+                      </div>
+                    )}
+                </article>
+              );
+            }
+          )}
+
+          {normalizedAnswers.length === 0 && (
+            <div className="no-answers-card">
+              <Clock3 size={24} />
+
+              <div>
+                <h3>
+                  No question responses available
+                </h3>
+
+                <p>
+                  No answers were submitted during this interview session.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="result-actions">
           <button
             type="button"
             className="result-primary-btn"
-            onClick={handleTryAgain}
+            onClick={handlePracticeAgain}
           >
-            <RotateCcw size={18} />
-            Try Another Interview
+            <RotateCcw size={19} />
+            Practice Again
           </button>
 
           <button
@@ -489,12 +656,12 @@ const Result = () => {
             className="result-secondary-btn"
             onClick={handleDashboard}
           >
-            <Home size={18} />
+            <LayoutDashboard size={19} />
             Back to Dashboard
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 
