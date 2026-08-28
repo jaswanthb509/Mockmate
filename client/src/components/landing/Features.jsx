@@ -29,7 +29,7 @@ const features = [
     title: "Company-Specific Practice",
     description:
       "Prepare for your target company with interview questions tailored to specific roles, technologies, and difficulty levels.",
-    tag: "Targeted Prep",
+    tag: "Targeted Preparation",
   },
   {
     icon: <Mic size={28} />,
@@ -50,7 +50,7 @@ const features = [
     title: "Resume-Based Interviews",
     description:
       "Upload your resume and receive interview questions based on your skills, projects, and professional experience.",
-    tag: "Resume Aware",
+    tag: "Resume Awareness",
   },
 ];
 
@@ -61,8 +61,8 @@ const Features = () => {
         <span className="section-label">POWERFUL FEATURES</span>
 
         <h2>
-          Everything You Need to
-          <span> Interview Smarter.</span>
+          Learn from every answer.
+          <span> Improve with every interview.</span>
         </h2>
 
         <p className="features-subtitle">

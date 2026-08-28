@@ -8,10 +8,8 @@ import {
 } from "lucide-react";
 
 import Sidebar from "../components/dashboard/Sidebar";
-import DashboardHeader from "../components/dashboard/DashboardHeader";
 import StatsCards from "../components/dashboard/StatsCards";
 import QuickActions from "../components/dashboard/QuickActions";
-import PerformanceOverview from "../components/dashboard/PerformanceOverview";
 import RecentInterviews from "../components/dashboard/RecentInterviews";
 
 import "./Dashboard.css";
@@ -23,8 +21,6 @@ const Dashboard = () => {
 
       <main className="dashboard-main">
         <div className="dashboard-container">
-          <DashboardHeader />
-
           <section className="dashboard-hero">
             <div className="dashboard-hero-glow dashboard-hero-glow-one"></div>
             <div className="dashboard-hero-glow dashboard-hero-glow-two"></div>
@@ -111,10 +107,6 @@ const Dashboard = () => {
           </section>
 
           <section className="dashboard-content-grid">
-            <div className="dashboard-panel performance-panel">
-              <PerformanceOverview />
-            </div>
-
             <div className="dashboard-panel quick-actions-panel">
               <QuickActions />
             </div>
