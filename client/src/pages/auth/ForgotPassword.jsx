@@ -4,29 +4,76 @@ import {
   ArrowLeft,
   Mail,
   Send,
+  CheckCircle2,
 } from "lucide-react";
 
+import API from "../../services/api";
 import "./ForgotPassword.css";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setError("");
     setMessage("");
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       setError("Please enter your email address.");
       return;
     }
 
-    setMessage(
-      "Password reset functionality will be available soon. For now, please contact support or create a new account."
-    );
+    if (!trimmedEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await API.post(
+        "/auth/forgot-password",
+        {
+          email: trimmedEmail,
+        }
+      );
+
+      const data = response.data;
+
+      if (!data?.success) {
+        throw new Error(
+          data?.message ||
+            "Unable to process your request."
+        );
+      }
+
+      setMessage(
+        data.message ||
+          "If an account exists with this email, password reset instructions have been sent."
+      );
+
+      setEmail("");
+    } catch (error) {
+      console.error(
+        "Forgot Password Error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to process your request. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,6 +122,8 @@ const ForgotPassword = () => {
                 onChange={(event) =>
                   setEmail(event.target.value)
                 }
+                disabled={loading}
+                autoComplete="email"
               />
             </div>
           </div>
@@ -86,17 +135,25 @@ const ForgotPassword = () => {
           )}
 
           {message && (
-            <p className="forgot-password-success">
-              {message}
-            </p>
+            <div className="forgot-password-success">
+              <CheckCircle2 size={18} />
+              <span>{message}</span>
+            </div>
           )}
 
           <button
             type="submit"
             className="forgot-password-submit"
+            disabled={loading}
           >
-            <Send size={17} />
-            Send Recovery Instructions
+            {loading ? (
+              "Sending..."
+            ) : (
+              <>
+                <Send size={17} />
+                Send Recovery Instructions
+              </>
+            )}
           </button>
         </form>
 

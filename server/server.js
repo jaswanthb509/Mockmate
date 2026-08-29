@@ -1,5 +1,6 @@
+import "dotenv/config";
+
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 
 import connectDB from "./config/db.js";
@@ -8,8 +9,6 @@ import authRoutes from "./routes/authRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -26,9 +25,20 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.originalUrl}`);
-
   next();
 });
+
+console.log(
+  "EMAIL_USER:",
+  process.env.EMAIL_USER || "NOT LOADED"
+);
+
+console.log(
+  "EMAIL_APP_PASSWORD:",
+  process.env.EMAIL_APP_PASSWORD
+    ? "LOADED"
+    : "NOT LOADED"
+);
 
 connectDB();
 
