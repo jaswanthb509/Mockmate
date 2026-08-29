@@ -27,12 +27,19 @@ const sendEmail = async ({
     }
 
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: emailUser,
         pass: emailPassword,
       },
+      tls: {
+        rejectUnauthorized: true,
+      },
     });
+
+    await transporter.verify();
 
     const mailOptions = {
       from: `"MockMate" <${emailUser}>`,
@@ -42,9 +49,7 @@ const sendEmail = async ({
       html,
     };
 
-    const info = await transporter.sendMail(
-      mailOptions
-    );
+    const info = await transporter.sendMail(mailOptions);
 
     console.log(
       `Email sent successfully to ${to}`
