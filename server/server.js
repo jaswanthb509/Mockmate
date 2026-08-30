@@ -17,12 +17,17 @@ const allowedOrigins = [
   "https://mockmate-eight-xi.vercel.app",
 ];
 
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.error("Blocked by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -31,7 +36,6 @@ app.use(
 );
 
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
@@ -39,30 +43,15 @@ app.use((req, res, next) => {
   next();
 });
 
-console.log(
-  "EMAIL_USER:",
-  process.env.EMAIL_USER || "NOT LOADED"
-);
-
-console.log(
-  "EMAIL_APP_PASSWORD:",
-  process.env.EMAIL_APP_PASSWORD
-    ? "LOADED"
-    : "NOT LOADED"
-);
-
 connectDB();
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/interview", interviewRoutes);
-
 app.use("/api/resume", resumeRoutes);
-
 app.use("/api/profile", profileRoutes);
 
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "MockMate API is running...",
   });
@@ -94,13 +83,12 @@ app.use((err, req, res, next) => {
   return res.status(500).json({
     success: false,
     message:
-      err.message ||
-      "Something went wrong on the server.",
+      err.message || "Something went wrong on the server.",
   });
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`MockMate server running on port ${PORT}`);
 });

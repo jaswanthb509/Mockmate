@@ -1,4 +1,6 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({
   to,
@@ -7,68 +9,32 @@ const sendEmail = async ({
   html,
 }) => {
   try {
-    const emailUser = process.env.EMAIL_USER;
-    const emailPassword = process.env.EMAIL_APP_PASSWORD;
-
-    if (!emailUser || !emailPassword) {
-      console.error("Email credentials are missing.");
-      console.error(
-        "EMAIL_USER:",
-        emailUser ? "Loaded" : "Missing"
-      );
-      console.error(
-        "EMAIL_APP_PASSWORD:",
-        emailPassword ? "Loaded" : "Missing"
-      );
-
-      throw new Error(
-        "Email credentials are not configured."
-      );
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is missing.");
+      throw new Error("Email service is not configured.");
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: emailUser,
-        pass: emailPassword,
-      },
-      tls: {
-        rejectUnauthorized: true,
-      },
-    });
-
-    await transporter.verify();
-
-    const mailOptions = {
-      from: `"MockMate" <${emailUser}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: "MockMate <onboarding@resend.dev>",
+      to: [to],
       subject,
       text,
       html,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error("Resend email error:", error);
+      throw new Error(error.message || "Unable to send email.");
+    }
 
-    console.log(
-      `Email sent successfully to ${to}`
-    );
+    console.log(`Email sent successfully to ${to}`);
+    console.log(`Message ID: ${data.id}`);
 
-    console.log(
-      `Message ID: ${info.messageId}`
-    );
-
-    return info;
+    return data;
   } catch (error) {
-    console.error(
-      "Email sending error:",
-      error
-    );
+    console.error("Email sending error:", error);
 
-    throw new Error(
-      "Unable to send email."
-    );
+    throw new Error("Unable to send email.");
   }
 };
 
