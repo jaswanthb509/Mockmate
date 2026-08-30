@@ -15,32 +15,43 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://mockmate-eight-xi.vercel.app",
+  "https://mockmate-65yeov2pq-jaswanthb509s-projects.vercel.app",
 ];
 
 if (process.env.CLIENT_URL) {
-  allowedOrigins.push(process.env.CLIENT_URL);
+  allowedOrigins.push(
+    process.env.CLIENT_URL.replace(/\/$/, "")
+  );
 }
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: function (origin, callback) {
       if (!origin) {
         return callback(null, true);
       }
 
-      const isAllowed =
-        allowedOrigins.includes(origin) ||
-        /^https:\/\/mockmate-[a-z0-9]+-jaswanthb509s-projects\.vercel\.app$/.test(
-          origin
-        );
+      const normalizedOrigin = origin.replace(/\/$/, "");
 
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.error("Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
       }
+
+      if (
+        /^https:\/\/mockmate-[a-z0-9-]+-jaswanthb509s-projects\.vercel\.app$/i.test(
+          normalizedOrigin
+        )
+      ) {
+        return callback(null, true);
+      }
+
+      console.error("Blocked by CORS:", origin);
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
     },
+
     credentials: true,
   })
 );
@@ -90,6 +101,13 @@ app.use((err, req, res, next) => {
     });
   }
 
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({
+      success: false,
+      message: "CORS origin not allowed.",
+    });
+  }
+
   return res.status(500).json({
     success: false,
     message:
@@ -100,5 +118,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`MockMate server running on port ${PORT}`);
+  console.log(
+    `MockMate server running on port ${PORT}`
+  );
 });
