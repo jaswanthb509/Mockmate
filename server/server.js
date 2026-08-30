@@ -24,7 +24,17 @@ if (process.env.CLIENT_URL) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/mockmate-[a-z0-9]+-jaswanthb509s-projects\.vercel\.app$/.test(
+          origin
+        );
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         console.error("Blocked by CORS:", origin);
