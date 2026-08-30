@@ -1,11 +1,16 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_APP_PASSWORD,
   },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
 });
 
 const sendEmail = async ({
@@ -23,6 +28,8 @@ const sendEmail = async ({
       throw new Error("EMAIL_APP_PASSWORD is missing.");
     }
 
+    await transporter.verify();
+
     const info = await transporter.sendMail({
       from: `"MockMate" <${process.env.EMAIL_USER}>`,
       to,
@@ -37,7 +44,10 @@ const sendEmail = async ({
     return info;
   } catch (error) {
     console.error("Email sending error:", error);
-    throw error;
+
+    throw new Error(
+      error.message || "Unable to send email."
+    );
   }
 };
 

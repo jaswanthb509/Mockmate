@@ -22,18 +22,21 @@ export const registerUser = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide name, email and password.",
+        message:
+          "Please provide name, email and password.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters.",
+        message:
+          "Password must be at least 6 characters.",
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
     const existingUser = await User.findOne({
       email: normalizedEmail,
@@ -42,11 +45,13 @@ export const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "An account with this email already exists.",
+        message:
+          "An account with this email already exists.",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword =
+      await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name: name.trim(),
@@ -72,7 +77,8 @@ export const registerUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to create account. Please try again.",
+      message:
+        "Unable to create account. Please try again.",
     });
   }
 };
@@ -84,11 +90,13 @@ export const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please enter email and password.",
+        message:
+          "Please enter email and password.",
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
     const user = await User.findOne({
       email: normalizedEmail,
@@ -97,19 +105,22 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password.",
+        message:
+          "Invalid email or password.",
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isPasswordCorrect =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password.",
+        message:
+          "Invalid email or password.",
       });
     }
 
@@ -131,17 +142,22 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to log in. Please try again.",
+      message:
+        "Unable to log in. Please try again.",
     });
   }
 };
 
-export const getCurrentUser = async (req, res) => {
+export const getCurrentUser = async (
+  req,
+  res
+) => {
   try {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "User not authorized.",
+        message:
+          "User not authorized.",
       });
     }
 
@@ -150,32 +166,45 @@ export const getCurrentUser = async (req, res) => {
       user: req.user,
     });
   } catch (error) {
-    console.error("Get Current User Error:", error);
+    console.error(
+      "Get Current User Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to fetch user information.",
+      message:
+        "Unable to fetch user information.",
     });
   }
 };
 
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (
+  req,
+  res
+) => {
   try {
     const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Please enter your email address.",
+        message:
+          "Please enter your email address.",
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
     const user = await User.findOne({
       email: normalizedEmail,
     });
 
+    /*
+     * Do not reveal whether an email
+     * is registered or not.
+     */
     if (!user) {
       return res.status(200).json({
         success: true,
@@ -184,223 +213,237 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken =
+      crypto.randomBytes(32).toString("hex");
 
-    const hashedResetToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const hashedResetToken =
+      crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
 
-    user.resetPasswordToken = hashedResetToken;
+    user.resetPasswordToken =
+      hashedResetToken;
 
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+    user.resetPasswordExpires =
+      Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
     /*
-     * Use the deployed frontend URL from CLIENT_URL.
+     * IMPORTANT:
+     * Render must contain:
      *
-     * Example:
-     * CLIENT_URL=https://mockmate-65yeov2pq-jaswanthb509s-projects.vercel.app
+     * CLIENT_URL=https://your-vercel-url.vercel.app
+     *
+     * Do not put localhost in Render.
      */
-    const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, "");
+    const clientUrl =
+      process.env.CLIENT_URL?.replace(/\/$/, "");
 
     if (!clientUrl) {
-      console.error("CLIENT_URL is missing.");
+      console.error(
+        "CLIENT_URL is missing."
+      );
 
       return res.status(500).json({
         success: false,
         message:
-          "Password reset service is not configured correctly.",
+          "Password reset service is not configured.",
       });
     }
 
-    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+    const resetUrl =
+      `${clientUrl}/reset-password/${resetToken}`;
 
-    console.log("Password reset URL generated:", resetUrl);
+    console.log(
+      "Password reset URL:",
+      resetUrl
+    );
 
-    const emailSubject = "Reset your MockMate password";
+    const subject =
+      "Reset your MockMate password";
 
-    const emailText = `
-Hello ${user.name},
+    const text = `
+Hello ${user.name || "there"},
 
 We received a request to reset your MockMate password.
 
-Use the link below to create a new password:
+Click the link below to create a new password:
 
 ${resetUrl}
 
-This password reset link will expire in 15 minutes.
+This link will expire in 15 minutes.
 
 If you did not request a password reset, you can safely ignore this email.
 
 Best regards,
-MockMate
-    `;
+MockMate Team
+`;
 
-    const emailHtml = `
+    const html = `
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>Reset your MockMate password</title>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+  <title>Reset your MockMate password</title>
+</head>
 
-  <body
+<body
+  style="
+    margin: 0;
+    padding: 0;
+    background: #0f172a;
+    font-family: Arial, Helvetica, sans-serif;
+  "
+>
+  <div
     style="
-      margin: 0;
-      padding: 0;
-      background: #0f172a;
-      font-family: Arial, Helvetica, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 40px 30px;
+      background: #172033;
+      border-radius: 20px;
+      color: #f8fafc;
     "
   >
-    <div
+
+    <h1
       style="
-        max-width: 600px;
-        margin: 40px auto;
-        padding: 40px 30px;
-        background: #172033;
-        border-radius: 20px;
-        color: #f8fafc;
+        margin: 0 0 25px;
+        font-size: 30px;
       "
     >
-      <h1
-        style="
-          margin: 0 0 25px;
-          font-size: 30px;
-        "
-      >
-        Mock<span style="color: #8b5cf6;">Mate</span>
-      </h1>
+      Mock<span style="color: #8b5cf6;">
+        Mate
+      </span>
+    </h1>
 
-      <p
+    <p
+      style="
+        color: #a78bfa;
+        font-size: 12px;
+        font-weight: bold;
+        letter-spacing: 1.5px;
+      "
+    >
+      PASSWORD RECOVERY
+    </p>
+
+    <h2
+      style="
+        margin: 10px 0 15px;
+        font-size: 25px;
+      "
+    >
+      Reset your password
+    </h2>
+
+    <p
+      style="
+        color: #cbd5e1;
+        font-size: 15px;
+        line-height: 1.7;
+      "
+    >
+      Hi ${user.name || "there"},
+    </p>
+
+    <p
+      style="
+        color: #cbd5e1;
+        font-size: 15px;
+        line-height: 1.7;
+      "
+    >
+      We received a request to reset your
+      MockMate account password.
+    </p>
+
+    <div style="margin: 30px 0;">
+      <a
+        href="${resetUrl}"
         style="
-          color: #a78bfa;
-          font-size: 12px;
+          display: inline-block;
+          padding: 14px 24px;
+          background: #7c3aed;
+          color: #ffffff;
+          text-decoration: none;
+          border-radius: 10px;
           font-weight: bold;
-          letter-spacing: 1.5px;
+          font-size: 14px;
         "
       >
-        PASSWORD RECOVERY
-      </p>
-
-      <h2
-        style="
-          margin: 10px 0 15px;
-          font-size: 25px;
-        "
-      >
-        Reset your password
-      </h2>
-
-      <p
-        style="
-          color: #cbd5e1;
-          font-size: 15px;
-          line-height: 1.7;
-        "
-      >
-        Hi ${user.name},
-      </p>
-
-      <p
-        style="
-          color: #cbd5e1;
-          font-size: 15px;
-          line-height: 1.7;
-        "
-      >
-        We received a request to reset your
-        MockMate account password.
-      </p>
-
-      <div style="margin: 30px 0;">
-        <a
-          href="${resetUrl}"
-          style="
-            display: inline-block;
-            padding: 14px 24px;
-            background: linear-gradient(
-              135deg,
-              #7c3aed,
-              #6d28d9
-            );
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 14px;
-          "
-        >
-          Reset Password
-        </a>
-      </div>
-
-      <p
-        style="
-          color: #94a3b8;
-          font-size: 13px;
-          line-height: 1.6;
-        "
-      >
-        This link will expire in
-        <strong>15 minutes</strong>.
-      </p>
-
-      <p
-        style="
-          color: #94a3b8;
-          font-size: 13px;
-          line-height: 1.6;
-        "
-      >
-        If you did not request a password reset,
-        you can safely ignore this email.
-      </p>
-
-      <hr
-        style="
-          margin: 30px 0;
-          border: none;
-          border-top: 1px solid
-            rgba(148, 163, 184, 0.15);
-        "
-      />
-
-      <p
-        style="
-          margin: 0;
-          color: #64748b;
-          font-size: 12px;
-        "
-      >
-        Practice. Get feedback. Improve with
-        every interview.
-      </p>
-
-      <p
-        style="
-          margin-top: 8px;
-          color: #64748b;
-          font-size: 12px;
-        "
-      >
-        — MockMate
-      </p>
+        Reset Password
+      </a>
     </div>
-  </body>
+
+    <p
+      style="
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.6;
+      "
+    >
+      This link will expire in
+      <strong>15 minutes</strong>.
+    </p>
+
+    <p
+      style="
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.6;
+      "
+    >
+      If you did not request a password reset,
+      you can safely ignore this email.
+    </p>
+
+    <hr
+      style="
+        margin: 30px 0;
+        border: none;
+        border-top: 1px solid
+        rgba(148, 163, 184, 0.15);
+      "
+    />
+
+    <p
+      style="
+        margin: 0;
+        color: #64748b;
+        font-size: 12px;
+      "
+    >
+      Practice. Get feedback. Improve with
+      every interview.
+    </p>
+
+    <p
+      style="
+        margin-top: 8px;
+        color: #64748b;
+        font-size: 12px;
+      "
+    >
+      — MockMate
+    </p>
+
+  </div>
+</body>
 </html>
-    `;
+`;
 
     await sendEmail({
       to: user.email,
-      subject: emailSubject,
-      text: emailText,
-      html: emailHtml,
+      subject,
+      text,
+      html,
     });
 
     return res.status(200).json({
@@ -409,7 +452,10 @@ MockMate
         "If an account exists with this email, password reset instructions have been sent.",
     });
   } catch (error) {
-    console.error("Forgot Password Error:", error);
+    console.error(
+      "Forgot Password Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -419,7 +465,10 @@ MockMate
   }
 };
 
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (
+  req,
+  res
+) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
@@ -427,28 +476,32 @@ export const resetPassword = async (req, res) => {
     if (!token) {
       return res.status(400).json({
         success: false,
-        message: "Password reset token is required.",
+        message:
+          "Password reset token is required.",
       });
     }
 
     if (!password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide a new password.",
+        message:
+          "Please provide a new password.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters.",
+        message:
+          "Password must be at least 6 characters.",
       });
     }
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const hashedToken =
+      crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -465,7 +518,8 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password =
+      await bcrypt.hash(password, 10);
 
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
@@ -478,7 +532,10 @@ export const resetPassword = async (req, res) => {
         "Password reset successfully. You can now log in with your new password.",
     });
   } catch (error) {
-    console.error("Reset Password Error:", error);
+    console.error(
+      "Reset Password Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
