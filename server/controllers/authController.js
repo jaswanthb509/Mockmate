@@ -22,21 +22,18 @@ export const registerUser = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please provide name, email and password.",
+        message: "Please provide name, email and password.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password must be at least 6 characters.",
+        message: "Password must be at least 6 characters.",
       });
     }
 
-    const normalizedEmail =
-      email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({
       email: normalizedEmail,
@@ -45,13 +42,11 @@ export const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message:
-          "An account with this email already exists.",
+        message: "An account with this email already exists.",
       });
     }
 
-    const hashedPassword =
-      await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name: name.trim(),
@@ -63,8 +58,7 @@ export const registerUser = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message:
-        "Account created successfully.",
+      message: "Account created successfully.",
       token,
       user: {
         id: user._id,
@@ -74,15 +68,11 @@ export const registerUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Register Error:",
-      error
-    );
+    console.error("Register Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to create account. Please try again.",
+      message: "Unable to create account. Please try again.",
     });
   }
 };
@@ -94,13 +84,11 @@ export const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please enter email and password.",
+        message: "Please enter email and password.",
       });
     }
 
-    const normalizedEmail =
-      email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await User.findOne({
       email: normalizedEmail,
@@ -109,22 +97,19 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message:
-          "Invalid email or password.",
+        message: "Invalid email or password.",
       });
     }
 
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message:
-          "Invalid email or password.",
+        message: "Invalid email or password.",
       });
     }
 
@@ -142,29 +127,21 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Login Error:",
-      error
-    );
+    console.error("Login Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to log in. Please try again.",
+      message: "Unable to log in. Please try again.",
     });
   }
 };
 
-export const getCurrentUser = async (
-  req,
-  res
-) => {
+export const getCurrentUser = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message:
-          "User not authorized.",
+        message: "User not authorized.",
       });
     }
 
@@ -173,36 +150,27 @@ export const getCurrentUser = async (
       user: req.user,
     });
   } catch (error) {
-    console.error(
-      "Get Current User Error:",
-      error
-    );
+    console.error("Get Current User Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to fetch user information.",
+      message: "Unable to fetch user information.",
     });
   }
 };
 
-export const forgotPassword = async (
-  req,
-  res
-) => {
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please enter your email address.",
+        message: "Please enter your email address.",
       });
     }
 
-    const normalizedEmail =
-      email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await User.findOne({
       email: normalizedEmail,
@@ -216,28 +184,42 @@ export const forgotPassword = async (
       });
     }
 
-    const resetToken =
-      crypto.randomBytes(32).toString("hex");
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
-    const hashedResetToken =
-      crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
+    const hashedResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
-    user.resetPasswordToken =
-      hashedResetToken;
+    user.resetPasswordToken = hashedResetToken;
 
-    user.resetPasswordExpires =
-      Date.now() + 15 * 60 * 1000;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
-    const resetUrl =
-      `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    /*
+     * Use the deployed frontend URL from CLIENT_URL.
+     *
+     * Example:
+     * CLIENT_URL=https://mockmate-65yeov2pq-jaswanthb509s-projects.vercel.app
+     */
+    const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, "");
 
-    const emailSubject =
-      "Reset your MockMate password";
+    if (!clientUrl) {
+      console.error("CLIENT_URL is missing.");
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Password reset service is not configured correctly.",
+      });
+    }
+
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+
+    console.log("Password reset URL generated:", resetUrl);
+
+    const emailSubject = "Reset your MockMate password";
 
     const emailText = `
 Hello ${user.name},
@@ -261,7 +243,10 @@ MockMate
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>Reset your MockMate password</title>
   </head>
 
@@ -424,10 +409,7 @@ MockMate
         "If an account exists with this email, password reset instructions have been sent.",
     });
   } catch (error) {
-    console.error(
-      "Forgot Password Error:",
-      error
-    );
+    console.error("Forgot Password Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -437,10 +419,7 @@ MockMate
   }
 };
 
-export const resetPassword = async (
-  req,
-  res
-) => {
+export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
@@ -448,32 +427,28 @@ export const resetPassword = async (
     if (!token) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password reset token is required.",
+        message: "Password reset token is required.",
       });
     }
 
     if (!password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please provide a new password.",
+        message: "Please provide a new password.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password must be at least 6 characters.",
+        message: "Password must be at least 6 characters.",
       });
     }
 
-    const hashedToken =
-      crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -490,8 +465,7 @@ export const resetPassword = async (
       });
     }
 
-    user.password =
-      await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(password, 10);
 
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
@@ -504,10 +478,7 @@ export const resetPassword = async (
         "Password reset successfully. You can now log in with your new password.",
     });
   } catch (error) {
-    console.error(
-      "Reset Password Error:",
-      error
-    );
+    console.error("Reset Password Error:", error);
 
     return res.status(500).json({
       success: false,

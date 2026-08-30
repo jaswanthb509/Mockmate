@@ -1,6 +1,12 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+});
 
 const sendEmail = async ({
   to,
@@ -9,32 +15,29 @@ const sendEmail = async ({
   html,
 }) => {
   try {
-    if (!process.env.RESEND_API_KEY) {
-      console.error("RESEND_API_KEY is missing.");
-      throw new Error("Email service is not configured.");
+    if (!process.env.EMAIL_USER) {
+      throw new Error("EMAIL_USER is missing.");
     }
 
-    const { data, error } = await resend.emails.send({
-      from: "MockMate <onboarding@resend.dev>",
-      to: [to],
+    if (!process.env.EMAIL_APP_PASSWORD) {
+      throw new Error("EMAIL_APP_PASSWORD is missing.");
+    }
+
+    const info = await transporter.sendMail({
+      from: `"MockMate" <${process.env.EMAIL_USER}>`,
+      to,
       subject,
       text,
       html,
     });
 
-    if (error) {
-      console.error("Resend email error:", error);
-      throw new Error(error.message || "Unable to send email.");
-    }
-
     console.log(`Email sent successfully to ${to}`);
-    console.log(`Message ID: ${data.id}`);
+    console.log(`Message ID: ${info.messageId}`);
 
-    return data;
+    return info;
   } catch (error) {
     console.error("Email sending error:", error);
-
-    throw new Error("Unable to send email.");
+    throw error;
   }
 };
 
