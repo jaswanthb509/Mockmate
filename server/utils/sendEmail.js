@@ -1,18 +1,3 @@
-import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD,
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 15000,
-});
-
 const sendEmail = async ({
   to,
   subject,
@@ -20,34 +5,53 @@ const sendEmail = async ({
   html,
 }) => {
   try {
-    if (!process.env.EMAIL_USER) {
-      throw new Error("EMAIL_USER is missing.");
+    if (!process.env.BREVO_API_KEY) {
+      throw new Error("BREVO_API_KEY is missing.");
     }
 
-    if (!process.env.EMAIL_APP_PASSWORD) {
-      throw new Error("EMAIL_APP_PASSWORD is missing.");
+    if (!process.env.BREVO_SENDER_EMAIL) {
+      throw new Error("BREVO_SENDER_EMAIL is missing.");
     }
 
-    await transporter.verify();
-
-    const info = await transporter.sendMail({
-      from: `"MockMate" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html,
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: "MockMate",
+          email: process.env.BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: to,
+          },
+        ],
+        subject,
+        textContent: text,
+        htmlContent: html,
+      }),
     });
 
-    console.log(`Email sent successfully to ${to}`);
-    console.log(`Message ID: ${info.messageId}`);
+    const data = await response.json();
 
-    return info;
+    if (!response.ok) {
+      console.error("Brevo email error:", data);
+      throw new Error(
+        data?.message || "Unable to send email."
+      );
+    }
+
+    console.log(`Email sent successfully to ${to}`);
+    console.log(`Message ID: ${data.messageId}`);
+
+    return data;
   } catch (error) {
     console.error("Email sending error:", error);
-
-    throw new Error(
-      error.message || "Unable to send email."
-    );
+    throw error;
   }
 };
 
